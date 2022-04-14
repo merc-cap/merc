@@ -1,1 +1,3 @@
-# merc
+# MERC
+
+Mercenary Gauges
