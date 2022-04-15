@@ -37,26 +37,16 @@ contract Gauge is IERC721, ERC721Enumerable {
 
     struct GaugeStakerState {
         uint256 balance;
-        uint256 rewards;
-        uint256 rewardsPerTokenPaid;
+        // uint256 rewards;
+        // uint256 rewardsPerTokenPaid;
     }
 
     struct GaugeState {
-        // Token we're using to stake
         IERC20 stakingToken;
-        // Total amount of stakingToken deposited
         uint256 totalStaked;
-        // State of each staker in this gauge, including balance, accumulated rewards
         mapping(address => GaugeStakerState) stakers;
-        // Current rewards per token stored
-        uint256 rewardPerTokenStored;
-        // Last time the state was updated
-        uint256 lastUpdateTime;
-        // How much weight this gauge has
         uint256 weight;
         mapping(address => uint256) pledges;
-        uint256 rewardPerMercPaid;
-        uint256 reward;
     }
 
     mapping(uint256 => GaugeState) public gauges;
@@ -73,7 +63,7 @@ contract Gauge is IERC721, ERC721Enumerable {
         override
         returns (string memory)
     {
-        return "some-svg-here";
+        return "TODO";
     }
 
     function mint(address to) public returns (uint256 id) {
@@ -155,10 +145,51 @@ contract Gauge is IERC721, ERC721Enumerable {
         emit Burn(msg.sender, gaugeId, amount);
     }
 
+    function stake(uint256 gaugeId, uint256 amount)
+        public
+        gaugeExists(gaugeId)
+        updateStakingReward(gaugeId, amount, msg.sender)
+    {
+        GaugeState storage g = gauges[gaugeId];
+
+        g.totalStaked += amount;
+        g.stakers[msg.sender].balance += amount;
+        g.stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+    }
+
+    function staked(uint256 gaugeId, address account)
+        public
+        view
+        returns (uint256)
+    {
+        return gauges[gaugeId].stakers[account].balance;
+    }
+
+    function unstake(uint256 gaugeId, uint256 amount)
+        public
+        gaugeExists(gaugeId)
+        updateStakingReward(gaugeId, amount, msg.sender)
+    {
+        GaugeState storage g = gauges[gaugeId];
+
+        g.totalStaked += amount;
+        g.stakers[msg.sender].balance += amount;
+        g.stakingToken.safeTransfer(msg.sender, amount);
+    }
+
     modifier gaugeExists(uint256 gaugeId) {
         if (!_exists(gaugeId)) {
             revert NotFound();
         }
+        _;
+    }
+
+    modifier updateStakingReward(
+        uint256 gaugeId,
+        uint256 amount,
+        address account
+    ) {
+        // TODO
         _;
     }
 
