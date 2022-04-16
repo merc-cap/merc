@@ -10,3 +10,6 @@
 [submodule "contracts/lib/hot-chain-svg"]
 	path = contracts/lib/hot-chain-svg
 	url = https://github.com/w1nt3r-eth/hot-chain-svg
+[submodule "contracts/lib/base64"]
+	path = contracts/lib/base64
+	url = https://github.com/Brechtpd/base64
