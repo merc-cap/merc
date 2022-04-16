@@ -45,6 +45,24 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
         assertEq(gauge.mintPrice(), 2e18);
     }
 
+    function testRecycle() public {
+        uint256 gaugeId = _mintedGauge();
+        MockERC20 newToken = new MockERC20();
+        uint256 newGaugeId = gauge.recycle(gaugeId, newToken);
+
+        cheats.expectRevert(bytes("ERC721: owner query for nonexistent token"));
+        gauge.ownerOf(gaugeId);
+        assertEq(gauge.weightOf(gaugeId), 0);
+        assertEq(gauge.ownerOf(newGaugeId), address(this));
+        assertEq(gauge.weightOf(newGaugeId), 1e18);
+
+        cheats.expectRevert(abi.encodeWithSignature("DeactivatedGauge()"));
+        gauge.pledge(gaugeId, 1);
+
+        cheats.expectRevert(abi.encodeWithSignature("DeactivatedGauge()"));
+        gauge.burn(gaugeId, 1);
+    }
+
     function testTokenUri() public {
         uint256 gaugeId = _mintedGauge();
         // TODO

@@ -17,6 +17,8 @@ contract Gauge is IERC721, ERC721Enumerable {
     error NotFound();
     error OnlyOwner();
     error AmountTooHigh();
+    error InvalidStakingToken();
+    error DeactivatedGauge();
 
     event Pledge(uint256 gaugeId, address account, uint256 amount);
     event Depledge(uint256 gaugeId, address account, uint256 amount);
@@ -56,6 +58,7 @@ contract Gauge is IERC721, ERC721Enumerable {
         mapping(address => GaugeStakerState) stakers;
         uint256 weight;
         mapping(address => uint256) pledges;
+        uint256 totalPledged;
         uint256 rewardPerWeightPaid;
         uint256 rewards;
         uint256 lastUpdateTime;
@@ -73,6 +76,9 @@ contract Gauge is IERC721, ERC721Enumerable {
         public
         returns (uint256 id)
     {
+        if (address(stakingToken) == address(0)) {
+            revert InvalidStakingToken();
+        }
         id = tokenCount++;
         merc.transferFrom(msg.sender, address(this), mintPrice);
 
@@ -81,6 +87,30 @@ contract Gauge is IERC721, ERC721Enumerable {
         gauges[id].weight = mintPrice;
         totalWeight += mintPrice;
         mintPrice = mintPrice * 2;
+
+        return id;
+    }
+
+    function recycle(uint256 gaugeId, IERC20Metadata stakingToken)
+        public
+        gaugeExists(gaugeId)
+        returns (uint256 id)
+    {
+        if (ownerOf(gaugeId) != msg.sender) {
+            revert OnlyOwner();
+        }
+        GaugeState storage original = gauges[gaugeId];
+        uint256 transferrableWeight = burnedWeightOf(gaugeId);
+        // TODO - recycle fee?
+        // merc.transferFrom(msg.sender, address(this), recycleFee);
+
+        id = tokenCount++;
+        _safeMint(msg.sender, id);
+        gauges[id].stakingToken = stakingToken;
+        gauges[id].weight = transferrableWeight;
+
+        original.weight -= transferrableWeight;
+        _burn(gaugeId);
 
         return id;
     }
@@ -96,14 +126,21 @@ contract Gauge is IERC721, ERC721Enumerable {
         return gauges[gaugeId].weight;
     }
 
+    function burnedWeightOf(uint256 gaugeId) public view returns (uint256) {
+        GaugeState storage g = gauges[gaugeId];
+        return g.weight - g.totalPledged;
+    }
+
     function pledge(uint256 gaugeId, uint256 amount)
         public
         gaugeExists(gaugeId)
+        gaugeActive(gaugeId)
         updateGaugeReward(gaugeId)
     {
         GaugeState storage g = gauges[gaugeId];
         g.pledges[msg.sender] += amount;
         g.weight += amount;
+        g.totalPledged += amount;
         totalWeight += amount;
 
         merc.transferFrom(msg.sender, address(this), amount);
@@ -131,6 +168,7 @@ contract Gauge is IERC721, ERC721Enumerable {
         }
         g.pledges[msg.sender] -= amount;
         g.weight -= amount;
+        g.totalPledged -= amount;
         totalWeight -= amount;
 
         merc.transferFrom(msg.sender, address(this), amount);
@@ -141,6 +179,7 @@ contract Gauge is IERC721, ERC721Enumerable {
     function burn(uint256 gaugeId, uint256 amount)
         public
         gaugeExists(gaugeId)
+        gaugeActive(gaugeId)
         updateGaugeReward(gaugeId)
     {
         GaugeState storage g = gauges[gaugeId];
@@ -282,13 +321,6 @@ contract Gauge is IERC721, ERC721Enumerable {
         _;
     }
 
-    modifier gaugeExists(uint256 gaugeId) {
-        if (!_exists(gaugeId)) {
-            revert NotFound();
-        }
-        _;
-    }
-
     //// Token URI + SVG Rendering
 
     function tokenURI(uint256 gaugeId)
@@ -365,5 +397,23 @@ contract Gauge is IERC721, ERC721Enumerable {
                 ),
                 "</svg>"
             );
+    }
+
+    function _exists(uint256 tokenId) internal view override returns (bool) {
+        return address(gauges[tokenId].stakingToken) != address(0);
+    }
+
+    modifier gaugeExists(uint256 gaugeId) {
+        if (!_exists(gaugeId)) {
+            revert NotFound();
+        }
+        _;
+    }
+
+    modifier gaugeActive(uint256 gaugeId) {
+        if (!super._exists(gaugeId)) {
+            revert DeactivatedGauge();
+        }
+        _;
     }
 }
