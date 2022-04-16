@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity ^0.8.10;
 
 import "ds-test/test.sol";
 import "../Gauge.sol";
@@ -115,8 +115,9 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
         uint256 claim = gauge.claimReward(gaugeId);
 
         assertEq(claim, expectedClaim);
-
         assertEq(merc.balanceOf(address(this)), expectedBalance);
+
+        cheats.warp(block.timestamp + 10);
     }
 
     function _mintedGauge() private returns (uint256) {

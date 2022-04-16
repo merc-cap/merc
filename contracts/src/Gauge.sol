@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity ^0.8.10;
 
 import "openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "hot-chain-svg/SVG.sol";
 import "./interfaces/IMerc.sol";
 import "./test/console.sol";
 
@@ -291,5 +292,37 @@ contract Gauge is IERC721, ERC721Enumerable {
             revert NotFound();
         }
         _;
+    }
+
+    //// SVG Rendering
+
+    function render(uint256 gaugeId) public pure returns (string memory) {
+        return
+            string.concat(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" style="background:#000">',
+                svg.text(
+                    string.concat(
+                        svg.prop("x", "20"),
+                        svg.prop("y", "40"),
+                        svg.prop("font-size", "22"),
+                        svg.prop("fill", "white")
+                    ),
+                    string.concat(
+                        svg.cdata("Hello, token #"),
+                        utils.uint2str(gaugeId)
+                    )
+                ),
+                svg.rect(
+                    string.concat(
+                        svg.prop("fill", "purple"),
+                        svg.prop("x", "20"),
+                        svg.prop("y", "50"),
+                        svg.prop("width", utils.uint2str(160)),
+                        svg.prop("height", utils.uint2str(10))
+                    ),
+                    utils.NULL
+                ),
+                "</svg>"
+            );
     }
 }
