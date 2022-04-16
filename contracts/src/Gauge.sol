@@ -3,14 +3,16 @@ pragma solidity ^0.8.10;
 
 import "openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "base64/base64.sol";
 import "hot-chain-svg/SVG.sol";
 import "./interfaces/IMerc.sol";
 import "./test/console.sol";
 
 contract Gauge is IERC721, ERC721Enumerable {
-    using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20Metadata;
 
     error NotFound();
     error OnlyOwner();
@@ -49,7 +51,7 @@ contract Gauge is IERC721, ERC721Enumerable {
     }
 
     struct GaugeState {
-        IERC20 stakingToken;
+        IERC20Metadata stakingToken;
         uint256 totalStaked;
         mapping(address => GaugeStakerState) stakers;
         uint256 weight;
@@ -67,17 +69,10 @@ contract Gauge is IERC721, ERC721Enumerable {
         mintPrice = 10**merc.decimals();
     }
 
-    function tokenURI(uint256)
+    function mint(address to, IERC20Metadata stakingToken)
         public
-        pure
-        virtual
-        override
-        returns (string memory)
+        returns (uint256 id)
     {
-        return "TODO";
-    }
-
-    function mint(address to, IERC20 stakingToken) public returns (uint256 id) {
         id = tokenCount++;
         merc.transferFrom(msg.sender, address(this), mintPrice);
 
@@ -294,12 +289,45 @@ contract Gauge is IERC721, ERC721Enumerable {
         _;
     }
 
-    //// SVG Rendering
+    //// Token URI + SVG Rendering
 
-    function render(uint256 gaugeId) public pure returns (string memory) {
+    function tokenURI(uint256 gaugeId)
+        public
+        view
+        virtual
+        override
+        returns (string memory)
+    {
+        string memory svgData = svgDataURI(gaugeId);
+        console.log(svgData);
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        '{"name": "MY NFT", "description": "", "image_data": "',
+                        bytes(svgData),
+                        '"}'
+                    )
+                )
+            )
+        );
+        return string(abi.encodePacked("data:application/json;base64,", json));
+    }
+
+    function svgDataURI(uint256 gaugeId) private view returns (string memory) {
         return
             string.concat(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" style="background:#000">',
+                "data:image/svg+xml;base64,",
+                Base64.encode(bytes(svgMarkup(gaugeId)))
+            );
+    }
+
+    function svgMarkup(uint256 gaugeId) private view returns (string memory) {
+        GaugeState storage g = gauges[gaugeId];
+
+        return
+            string.concat(
+                "<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300' style='background:#000'>",
                 svg.text(
                     string.concat(
                         svg.prop("x", "20"),
@@ -307,16 +335,34 @@ contract Gauge is IERC721, ERC721Enumerable {
                         svg.prop("font-size", "22"),
                         svg.prop("fill", "white")
                     ),
+                    string.concat(svg.cdata("Gauge #"), utils.uint2str(gaugeId))
+                ),
+                svg.text(
                     string.concat(
-                        svg.cdata("Hello, token #"),
-                        utils.uint2str(gaugeId)
+                        svg.prop("x", "20"),
+                        svg.prop("y", "80"),
+                        svg.prop("font-size", "22"),
+                        svg.prop("fill", "white")
+                    ),
+                    string.concat(svg.cdata("Token: "), g.stakingToken.symbol())
+                ),
+                svg.text(
+                    string.concat(
+                        svg.prop("x", "20"),
+                        svg.prop("y", "120"),
+                        svg.prop("font-size", "22"),
+                        svg.prop("fill", "white")
+                    ),
+                    string.concat(
+                        svg.cdata("Weight: "),
+                        utils.uint2str(g.weight / (10**merc.decimals()))
                     )
                 ),
                 svg.rect(
                     string.concat(
                         svg.prop("fill", "purple"),
                         svg.prop("x", "20"),
-                        svg.prop("y", "50"),
+                        svg.prop("y", "150"),
                         svg.prop("width", utils.uint2str(160)),
                         svg.prop("height", utils.uint2str(10))
                     ),
