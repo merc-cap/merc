@@ -43,7 +43,7 @@ contract Merc is ERC20, IMerc {
         return amount;
     }
 
-    function mint() public {
+    function mint() external override {
         uint256 amount = mintable();
         if (amount == 0) {
             revert SupplyLimit();

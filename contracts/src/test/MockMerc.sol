@@ -13,6 +13,10 @@ contract MockMerc is ERC20, IMerc {
         _mint(to, amount);
     }
 
+    function mint() external override {
+        _mint(msg.sender, 1e22);
+    }
+
     function burn(uint256 amount) external override {
         _burn(msg.sender, amount);
     }
