@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.12;
 
 import "openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
@@ -299,22 +299,17 @@ contract Gauge is IERC721, ERC721Enumerable {
         returns (string memory)
     {
         string memory svgData = svgDataURI(gaugeId);
-        console.log(svgData);
         string memory json = Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                        '{"name": "MY NFT", "description": "", "image_data": "',
-                        bytes(svgData),
-                        '"}'
-                    )
-                )
+            bytes.concat(
+                '{"name": "MY NFT", "description": "", "image_data": "',
+                bytes(svgData),
+                '"}'
             )
         );
         return string(abi.encodePacked("data:application/json;base64,", json));
     }
 
-    function svgDataURI(uint256 gaugeId) private view returns (string memory) {
+    function svgDataURI(uint256 gaugeId) public view returns (string memory) {
         return
             string.concat(
                 "data:image/svg+xml;base64,",
@@ -322,7 +317,7 @@ contract Gauge is IERC721, ERC721Enumerable {
             );
     }
 
-    function svgMarkup(uint256 gaugeId) private view returns (string memory) {
+    function svgMarkup(uint256 gaugeId) public view returns (string memory) {
         GaugeState storage g = gauges[gaugeId];
 
         return

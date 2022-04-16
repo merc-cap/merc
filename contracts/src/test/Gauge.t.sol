@@ -47,7 +47,10 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testTokenUri() public {
         uint256 gaugeId = _mintedGauge();
-        gauge.tokenURI(gaugeId);
+        // TODO
+        // console.log(gauge.svgMarkup(gaugeId));
+        // console.log(gauge.svgDataURI(gaugeId));
+        // console.log(gauge.tokenURI(gaugeId));
     }
 
     function testPledge() public {
