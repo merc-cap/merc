@@ -1,3 +1,3 @@
-# MERC
+# MERCENARY CAPITAL
 
-Mercenary Gauges
+Gauges for hire.
