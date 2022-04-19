@@ -34,6 +34,20 @@ const Docs = () => (
             <li>On-chain metadata / art</li>
           </ul>
         </li>
+        <li>
+          Each gauge has two associated ERC-4626 token vaults:
+          <ul>
+            <li>
+              <code>MERC-&lt;tokenName&gt;</code>, e.g.{" "}
+              <code>MERC-UST-FRAX-f</code>
+            </li>
+            <li>
+              <code>P-MERC-&lt;tokenName&gt;</code>, e.g.{" "}
+              <code>P-MERC-UST-FRAX-f</code>
+            </li>
+          </ul>
+        </li>
+
         <li>Mint with an assigned staking token</li>
         <li>
           Mint fee:
