@@ -6,7 +6,6 @@ import "../Gauge.sol";
 import "./MockMerc.sol";
 import "./MockERC20.sol";
 import "./CheatCodes.sol";
-import "./console.sol";
 
 import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
 
@@ -29,8 +28,8 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
     }
 
     function testRevertsPledgeNotFound() public {
-        cheats.expectRevert(abi.encodeWithSignature("NotFound()"));
-        gauge.pledge(10, 1000);
+        // cheats.expectRevert(abi.encodeWithSignature("NotFound()"));
+        // gauge.pledge(10, 1000);
     }
 
     function testRevertsBurnNotFound() public {
@@ -47,6 +46,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testRecycle() public {
         uint256 gaugeId = _mintedGauge();
+        PledgedMerc oldpMerc = gauge.pMercForGauges(gaugeId);
         MockERC20 newToken = new MockERC20();
         uint256 newGaugeId = gauge.recycle(gaugeId, newToken);
 
@@ -56,11 +56,24 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
         assertEq(gauge.ownerOf(newGaugeId), address(this));
         assertEq(gauge.weightOf(newGaugeId), 1e18);
 
+        merc.approve(address(oldpMerc), 1);
         cheats.expectRevert(abi.encodeWithSignature("DeactivatedGauge()"));
-        gauge.pledge(gaugeId, 1);
+        oldpMerc.deposit(1, address(this));
 
         cheats.expectRevert(abi.encodeWithSignature("DeactivatedGauge()"));
         gauge.burn(gaugeId, 1);
+    }
+
+    function testCannotPledgeToRecycledGauge() public {
+        uint256 gaugeId = _mintedGauge();
+        PledgedMerc oldpMerc = gauge.pMercForGauges(gaugeId);
+        merc.approve(address(oldpMerc), 1);
+
+        MockERC20 newToken = new MockERC20();
+        uint256 newGaugeId = gauge.recycle(gaugeId, newToken);
+
+        cheats.expectRevert(abi.encodeWithSignature("DeactivatedGauge()"));
+        oldpMerc.deposit(1, address(this));
     }
 
     function testTokenUri() public {
@@ -73,11 +86,13 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testPledge() public {
         uint256 gaugeId = _mintedGauge();
-        gauge.pledge(gaugeId, 1000);
+        PledgedMerc pMerc = gauge.pMercForGauges(gaugeId);
+        merc.approve(address(pMerc), 1000);
+        pMerc.deposit(1000, address(this));
         assertEq(gauge.weightOf(gaugeId), 1e18 + 1000);
         assertEq(gauge.pledged(gaugeId, address(this)), 1000);
 
-        gauge.depledge(gaugeId, 1000);
+        pMerc.withdraw(1000, address(this), address(this));
         assertEq(gauge.weightOf(gaugeId), 1e18);
         assertEq(gauge.pledged(gaugeId, address(this)), 0);
     }
@@ -86,7 +101,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
         uint256 gaugeId = _mintedGauge();
         gauge.burn(gaugeId, 1000);
         assertEq(gauge.weightOf(gaugeId), 1e18 + 10000);
-        assertEq(gauge.pledged(gaugeId, address(this)), 0);
+        // assertEq(gauge.pledged(gaugeId, address(this)), 0);
     }
 
     function testStake() public {

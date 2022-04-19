@@ -6,13 +6,17 @@ import "openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "openzeppelin/contracts/proxy/Clones.sol";
+import "openzeppelin/contracts/utils/Strings.sol";
+
 import "base64/base64.sol";
 import "hot-chain-svg/SVG.sol";
 import "./interfaces/IMerc.sol";
-import "./test/console.sol";
+import "./PledgedMerc.sol";
 
 contract Gauge is IERC721, ERC721Enumerable {
     using SafeERC20 for IERC20Metadata;
+    using SafeERC20 for IMerc;
 
     error NotFound();
     error OnlyOwner();
@@ -42,6 +46,8 @@ contract Gauge is IERC721, ERC721Enumerable {
     uint8 constant BURN_WEIGHT_COEFF = 10;
 
     IMerc public immutable merc;
+    PledgedMerc private immutable defaultPledgedMerc;
+    mapping(uint256 => PledgedMerc) public pMercForGauges;
 
     uint256 public tokenCount;
     uint256 public mintPrice;
@@ -70,6 +76,9 @@ contract Gauge is IERC721, ERC721Enumerable {
     constructor(IMerc _merc) ERC721("Mercenary Gauge", "gMERC") {
         merc = _merc;
         mintPrice = 10**merc.decimals();
+        defaultPledgedMerc = new PledgedMerc(_merc);
+        // economically impossible to mint uint256.max gauges
+        defaultPledgedMerc.initialize(Gauge(address(0)), type(uint256).max, "", "");
     }
 
     function mint(address to, IERC20Metadata stakingToken)
@@ -80,13 +89,19 @@ contract Gauge is IERC721, ERC721Enumerable {
             revert InvalidStakingToken();
         }
         id = tokenCount++;
-        merc.transferFrom(msg.sender, address(this), mintPrice);
+        merc.safeTransferFrom(msg.sender, address(this), mintPrice);
+        merc.burn(mintPrice);
 
         _safeMint(to, id);
         gauges[id].stakingToken = stakingToken;
         gauges[id].weight = mintPrice;
         totalWeight += mintPrice;
         mintPrice = mintPrice * 2;
+
+        string memory idStr = Strings.toString(id);
+        PledgedMerc pMerc = PledgedMerc(Clones.clone(address(defaultPledgedMerc)));
+        pMerc.initialize(this, id, string(abi.encodePacked("Pledged Merc Gauge ", idStr)), string(abi.encodePacked("pMERC-", idStr)));
+        pMercForGauges[id] = pMerc;
 
         return id;
     }
@@ -131,21 +146,22 @@ contract Gauge is IERC721, ERC721Enumerable {
         return g.weight - g.totalPledged;
     }
 
-    function pledge(uint256 gaugeId, uint256 amount)
+    function pledge(uint256 gaugeId, uint256 amount, address who)
         public
         gaugeExists(gaugeId)
         gaugeActive(gaugeId)
         updateGaugeReward(gaugeId)
     {
+        require(msg.sender == address(pMercForGauges[gaugeId]), "Gauge: invalid sender");
         GaugeState storage g = gauges[gaugeId];
-        g.pledges[msg.sender] += amount;
+        g.pledges[who] += amount;
         g.weight += amount;
         g.totalPledged += amount;
         totalWeight += amount;
 
-        merc.transferFrom(msg.sender, address(this), amount);
+        merc.safeTransferFrom(msg.sender, address(this), amount);
 
-        emit Pledge(gaugeId, msg.sender, amount);
+        emit Pledge(gaugeId, who, amount);
     }
 
     function pledged(uint256 gaugeId, address account)
@@ -157,23 +173,24 @@ contract Gauge is IERC721, ERC721Enumerable {
         return g.pledges[account];
     }
 
-    function depledge(uint256 gaugeId, uint256 amount)
+    function depledge(uint256 gaugeId, uint256 amount, address who)
         public
         gaugeExists(gaugeId)
         updateGaugeReward(gaugeId)
     {
+        require(msg.sender == address(pMercForGauges[gaugeId]), "Gauge: invalid sender");
         GaugeState storage g = gauges[gaugeId];
-        if (amount > g.pledges[msg.sender]) {
+        if (amount > g.pledges[who]) {
             revert AmountTooHigh();
         }
-        g.pledges[msg.sender] -= amount;
+        g.pledges[who] -= amount;
         g.weight -= amount;
         g.totalPledged -= amount;
         totalWeight -= amount;
 
-        merc.transferFrom(msg.sender, address(this), amount);
+        merc.safeTransfer(msg.sender, amount);
 
-        emit Depledge(gaugeId, msg.sender, amount);
+        emit Depledge(gaugeId, who, amount);
     }
 
     function burn(uint256 gaugeId, uint256 amount)
