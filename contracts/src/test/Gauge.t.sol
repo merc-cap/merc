@@ -77,7 +77,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
     }
 
     function testTokenUri() public {
-        uint256 gaugeId = _mintedGauge();
+        // uint256 gaugeId = _mintedGauge();
         // TODO
         // console.log(gauge.svgMarkup(gaugeId));
         // console.log(gauge.svgDataURI(gaugeId));
@@ -154,6 +154,111 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
         assertEq(merc.balanceOf(address(this)), expectedBalance);
 
         cheats.warp(block.timestamp + 10);
+    }
+
+    function testAliceBobMultiGauge() public {
+        uint256 gaugeId = _mintedGauge();
+
+        address alice = address(0xaa);
+        token.mint(alice, 1000);
+        cheats.prank(alice);
+        token.approve(address(gauge), 1000);
+
+        address bob = address(0xbb);
+        token.mint(bob, 1000);
+        cheats.prank(bob);
+        token.approve(address(gauge), 1000);
+
+        uint256 t = block.timestamp;
+
+        // t+1
+        cheats.warp(t + 1);
+
+        // Since gauge is weight 1, the rewards accummulated over one tick
+        // should be the same as the reward rate/
+        assertEq(gauge.rewardPerGaugeWeight(), gauge.rewardRate());
+
+        // Alice stakes 1000
+        cheats.prank(alice);
+        gauge.stake(gaugeId, 1000);
+
+        // t+5
+        cheats.warp(t + 5);
+
+        // 4 ticks later, bob stakes.
+        cheats.prank(bob);
+        gauge.stake(gaugeId, 1000);
+
+        // At this point, alice should have 4 ticks wrth of rewards
+        // cheats.prank(alice);
+
+        assertEq(gauge.earned(gaugeId, alice), (gauge.rewardRate() * 4));
+
+        // t+10
+        cheats.warp(t + 10);
+
+        // Since gauge weight is 1, and since it has been 10 ticks, the
+        // rewards per gauge weight are rewardRate * 10 / 1000
+        assertEq(gauge.rewardPerGaugeWeight(), gauge.rewardRate() * 10);
+
+        // Alice staked at t+1, Bob staked at t+5 and it is now t+10.
+        // So the reward per token should be 4 ticks at reward rate / 1000 staked tokens
+        // plus 5 ticks at reward rate / 2000 staked tokens
+        assertEq(
+            gauge.rewardPerToken(gaugeId) / gauge.REWARD_PER_TOKEN_PRECISION(),
+            (gauge.rewardRate() * 4) / 1000 + (gauge.rewardRate() * 5) / 2000
+        );
+
+        // Alice wants to claim now at t+10
+        // She should get full staking rewards for part of that time,
+        // and partial for the second part of time
+
+        uint256 claimable = gauge.earned(gaugeId, alice);
+        assertEq(
+            claimable,
+            (gauge.rewardRate() * 4) + (gauge.rewardRate() * 5) / 2
+        );
+        cheats.prank(alice);
+        uint256 claimed = gauge.claimReward(gaugeId);
+        assertEq(claimed, claimable);
+        // After claiming, Alice has nothing earned
+        assertEq(gauge.earned(gaugeId, alice), 0);
+
+        // t+12
+        cheats.warp(t + 12);
+        // Alice has 2 days of earnings now
+        assertEq(gauge.earned(gaugeId, alice), (gauge.rewardRate() * 2) / 2);
+        // At this point Bob has been earning for 7 days
+        assertEq(gauge.earned(gaugeId, bob), (gauge.rewardRate() * 7) / 2);
+
+        // Alice is now going to fully unstake
+        assertEq(gauge.staked(gaugeId, alice), 1000);
+        cheats.prank(alice);
+        gauge.unstake(gaugeId, 1000);
+        assertEq(gauge.staked(gaugeId, alice), 0);
+
+        // t+20
+
+        cheats.warp(t + 20);
+
+        // Alice still only has 2 days of earnings now
+        assertEq(gauge.earned(gaugeId, alice), (gauge.rewardRate() * 2) / 2);
+        // Bob has accrued a lot because he is no longer splitting.
+        assertEq(
+            gauge.earned(gaugeId, bob),
+            (gauge.rewardRate() * 7) / 2 + (gauge.rewardRate() * 8)
+        );
+        cheats.prank(bob);
+        gauge.claimReward(gaugeId);
+
+        // Let's create another gauge and see how that affects their earnings.
+        uint256 newGaugeId = _mintedGauge();
+        assertEq(gauge.weightOf(newGaugeId), 2e18);
+
+        // t + 30
+        cheats.warp(t + 30);
+        // Bob should be now earning at 1/3 of his previous rate because his gauge is not nearly so weighted
+        assertEq(gauge.earned(gaugeId, bob), ((gauge.rewardRate() * 10) / 3));
     }
 
     function _mintedGauge() private returns (uint256) {
