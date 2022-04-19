@@ -7,7 +7,11 @@ const Docs = () => (
       <Typography variant="h2">Overview</Typography>
 
       <p>MERC is a protocol for tradeable, gauged rewards staking.</p>
-      <p>A MERC gauge entitles the owner to incentivize liquidity using MERC rewards. You could build a market where people are growing and selling their own gauges to protocols.
+      <p>
+        A MERC gauge entitles the owner to incentivize liquidity using MERC
+        rewards. You could build a market where people are growing and selling
+        their own gauges to protocols.
+      </p>
 
       <Typography variant="h2">Nuts &amp; Bolts</Typography>
       <p>MERC</p>
