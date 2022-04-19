@@ -14,22 +14,25 @@ import {
 } from "react-router-dom";
 import Home from "./Home";
 import NoMatch from "./NoMatch";
-import Gauge from "./Gauge";
+import GaugeList from "./GaugeList";
 import Nav from "./Nav";
 import Header from "./Header";
+import Web3App from "./Web3App";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="docs" element={<Docs />} />
-          <Route path="gauge/:id" element={<Gauge />} />
-          <Route path="*" element={<NoMatch />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <Web3App>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="docs" element={<Docs />} />
+            <Route path="gauges" element={<GaugeList />} />
+            <Route path="*" element={<NoMatch />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </Web3App>
   );
 }
 

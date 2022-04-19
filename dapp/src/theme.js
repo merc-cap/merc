@@ -7,20 +7,24 @@ export const theme = createTheme({
   palette: {
     mode: "dark",
     primary: {
-      main: "#ff0000",
+      main: "#F9DC5C",
     },
     secondary: {
-      main: "#ff6600",
+      main: "#ED254E",
     },
     text: {
-      primary: "#cccccc",
+      primary: "#F4FFFD",
+    },
+    background: {
+      default: "#111111",
+      paper: "#191919",
     },
   },
   typography: {
     fontSize,
     // fontFamily: ['"Open Sans"', "sans-serif"].join(","),
-    fontFamily: ['"Open Sans"', "sans-serif"].join(","),
-
+    fontFamily: ['"Space Grotesk"', "sans-serif"].join(","),
+    //
     h1: {
       fontSize: fontSize * 2,
       fontWeight: 700,
@@ -62,6 +66,9 @@ export const theme = createTheme({
       styleOverrides: {
         body: {
           fontSize,
+        },
+        code: {
+          fontFamily: "'Space Mono', monospace",
         },
       },
     },

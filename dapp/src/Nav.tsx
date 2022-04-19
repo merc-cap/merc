@@ -13,8 +13,8 @@ const Nav = () => {
         Docs
       </Link>{" "}
       |{" "}
-      <Link component={RouterLink} to="/gauge/1">
-        Gauge/1
+      <Link component={RouterLink} to="/gauges">
+        Gauges
       </Link>
     </Box>
   );

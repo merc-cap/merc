@@ -1,37 +1,55 @@
-import {
-  Box,
-  Button,
-  Card,
-  Grid,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Button, Card, Stack, TextField, Typography } from "@mui/material";
+import { ethers } from "ethers";
+import debounce from "lodash.debounce";
+import { useState } from "react";
+import ContractInfo from "./ContractInfo";
 
-const Mint = () => (
-  <Card sx={{ p: 3 }}>
-    <Stack spacing={2}>
-      <Typography variant="h2">Mint a Gauge</Typography>
+const Mint = () => {
+  const [tokenAddress, setTokenAddress] = useState<string>();
 
-      <p>Current price: 2 MERC</p>
+  const debouncedSetTokenAddress = debounce(async (address: string) => {
+    setTokenAddress(address);
+  }, 500);
 
-      <TextField
-        id="tokenAddress"
-        placeholder="0x..."
-        label="Token Address"
-        variant="outlined"
-      />
-      <Button variant="contained">Approve MERC</Button>
+  const handleAddressChange = (
+    ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    try {
+      const address = ethers.utils.getAddress(ev.target.value.trim());
+      debouncedSetTokenAddress(address);
+    } catch (e: any) {
+      if (e.code === "INVALID_ARGUMENT") {
+        console.log("invalid");
+        setTokenAddress(undefined);
+      } else {
+        throw e;
+      }
+    }
+  };
+  const mintDisabled = !tokenAddress;
 
-      {/* <FormControl>
-      <InputLabel htmlFor="my-input">Token Address</InputLabel>
-      <Input id="my-input" aria-describedby="my-helper-text" />
-      <FormHelperText id="my-helper-text">
-        We'll never share your email.
-      </FormHelperText>
-    </FormControl>{" "} */}
-    </Stack>
-  </Card>
-);
+  return (
+    <Card sx={{ p: 6 }}>
+      <Stack spacing={2}>
+        <Typography variant="h2">Mint a Gauge</Typography>
+        <p>Current price: 2 MERC</p>
+
+        <TextField
+          id="tokenAddress"
+          placeholder="0x..."
+          label="Token Address"
+          variant="outlined"
+          autoComplete="false"
+          autoCorrect="false"
+          onChange={handleAddressChange}
+        />
+        {tokenAddress && <ContractInfo address={tokenAddress} />}
+        <Button disabled={mintDisabled} variant="contained">
+          Create Gauge
+        </Button>
+      </Stack>
+    </Card>
+  );
+};
 
 export default Mint;
