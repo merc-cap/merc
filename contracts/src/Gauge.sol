@@ -34,8 +34,9 @@ contract Gauge is IERC721, ERC721Enumerable {
 
     uint256 public rewardRate = 23456789012345678901; // TODO - get this from Merc.
     uint256 public lastUpdateTime;
+    uint256 public immutable createTime;
     uint256 public rewardPerGaugeWeightStored;
-    uint256 private totalWeight;
+    uint256 public totalWeight;
 
     // ERC-721 minting stuff
 
@@ -70,6 +71,7 @@ contract Gauge is IERC721, ERC721Enumerable {
     constructor(IMerc _merc) ERC721("Mercenary Gauge", "gMERC") {
         merc = _merc;
         mintPrice = 10**merc.decimals();
+        createTime = block.timestamp;
     }
 
     function mint(address to, IERC20Metadata stakingToken)
@@ -85,6 +87,7 @@ contract Gauge is IERC721, ERC721Enumerable {
         _safeMint(to, id);
         gauges[id].stakingToken = stakingToken;
         gauges[id].weight = mintPrice;
+        gauges[id].lastUpdateTime = block.timestamp;
         totalWeight += mintPrice;
         mintPrice = mintPrice * 2;
 
@@ -205,6 +208,10 @@ contract Gauge is IERC721, ERC721Enumerable {
         emit Stake(gaugeId, msg.sender, amount);
     }
 
+    function totalStaked(uint256 gaugeId) public view returns (uint256) {
+        return gauges[gaugeId].totalStaked;
+    }
+
     function staked(uint256 gaugeId, address account)
         public
         view
@@ -220,10 +227,30 @@ contract Gauge is IERC721, ERC721Enumerable {
     {
         GaugeState storage g = gauges[gaugeId];
 
-        g.totalStaked += amount;
-        g.stakers[msg.sender].balance += amount;
+        if (amount > g.stakers[msg.sender].balance) {
+            revert AmountTooHigh();
+        }
+
+        g.totalStaked -= amount;
+        g.stakers[msg.sender].balance -= amount;
         g.stakingToken.safeTransfer(msg.sender, amount);
         emit Unstake(gaugeId, msg.sender, amount);
+    }
+
+    /// @notice Returns the amount that would be claimable if claimed in this block
+    /// @param gaugeId a parameter just like in doxygen (must be followed by parameter name)
+    /// @return  claimable value
+    function claimable(uint256 gaugeId)
+        public
+        view
+        gaugeExists(gaugeId)
+        returns (uint256)
+    {
+        GaugeState storage g = gauges[gaugeId];
+        return
+            (g.stakers[msg.sender].rewards +
+                g.stakers[msg.sender].balance *
+                rewardPerToken(gaugeId)) / REWARD_PER_TOKEN_PRECISION;
     }
 
     function claimReward(uint256 gaugeId)
