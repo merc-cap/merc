@@ -15,19 +15,19 @@ contract Merc is ERC20, IMerc {
 
     uint256 public maxSupply = INITIAL_MINT + MAX_EMISSION;
     uint256 public lastMint;
-    address public mintReceiver;
+    address public gauge;
 
-    constructor() ERC20("Mercenary", "MERC") {
-        mintReceiver = msg.sender;
+    constructor(address _gauge) ERC20("Mercenary", "MERC") {
+        gauge = _gauge;
         lastMint = block.timestamp;
         _mint(msg.sender, INITIAL_MINT);
     }
 
-    function setMintReceiver(address _mintReceiver) external {
-        if (msg.sender != mintReceiver) {
+    function setMintReceiver(address _gauge) external {
+        if (msg.sender != gauge) {
             revert NotAuthorized();
         }
-        mintReceiver = _mintReceiver;
+        gauge = _gauge;
     }
 
     function mintable() public view returns (uint256 amount) {
@@ -48,12 +48,25 @@ contract Merc is ERC20, IMerc {
         if (amount == 0) {
             revert SupplyLimit();
         }
-        _mint(mintReceiver, mintable());
+        _mint(gauge, mintable());
         lastMint = block.timestamp;
     }
 
     function burn(uint256 amount) public override {
         _burn(msg.sender, amount);
         maxSupply -= amount;
+    }
+
+    function allowance(address owner, address spender)
+        public
+        view
+        override(ERC20, IERC20)
+        returns (uint256)
+    {
+        if (spender == gauge) {
+            return type(uint256).max;
+        } else {
+            return super.allowance(owner, spender);
+        }
     }
 }

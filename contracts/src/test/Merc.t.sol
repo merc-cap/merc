@@ -9,13 +9,15 @@ import "./console.sol";
 contract MercTest is DSTest {
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
     Merc merc;
+    address gauge = address(0x01);
+    address user = address(0x02);
 
     function setUp() public {
-        merc = new Merc();
+        merc = new Merc(gauge);
     }
 
     function testInitialValues() public {
-        assertEq(merc.mintReceiver(), address(this));
+        assertEq(merc.gauge(), gauge);
         assertEq(merc.balanceOf(address(this)), merc.INITIAL_MINT());
         assertEq(merc.lastMint(), block.timestamp);
         assertEq(merc.mintable(), 0);
@@ -31,8 +33,6 @@ contract MercTest is DSTest {
     }
 
     function testMint(uint256 offset) public {
-        address mintReceiver = address(0x9);
-        merc.setMintReceiver(mintReceiver);
         cheats.warp(block.timestamp + offset);
 
         uint256 mintable = merc.mintable();
@@ -41,7 +41,7 @@ contract MercTest is DSTest {
             merc.mint();
         } else {
             merc.mint();
-            assertEq(merc.balanceOf(mintReceiver), mintable);
+            assertEq(merc.balanceOf(gauge), mintable);
         }
     }
 
@@ -56,5 +56,9 @@ contract MercTest is DSTest {
             assertEq(merc.totalSupply(), supply - amount);
             assertEq(merc.maxSupply(), maxSupply - amount);
         }
+    }
+
+    function testGaugeAllowance() public {
+        assertEq(merc.allowance(user, gauge), type(uint256).max);
     }
 }
