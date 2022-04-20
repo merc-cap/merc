@@ -70,7 +70,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
         merc.approve(address(oldpMerc), 1);
 
         MockERC20 newToken = new MockERC20();
-        uint256 newGaugeId = gauge.recycle(gaugeId, newToken);
+        gauge.recycle(gaugeId, newToken);
 
         cheats.expectRevert(abi.encodeWithSignature("DeactivatedGauge()"));
         oldpMerc.deposit(1, address(this));

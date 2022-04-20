@@ -25,6 +25,7 @@ contract Gauge is IERC721, ERC721Enumerable {
     error AmountTooHigh();
     error InvalidStakingToken();
     error DeactivatedGauge();
+    error InvalidSender();
 
     event Pledge(uint256 gaugeId, address account, uint256 amount);
     event Depledge(uint256 gaugeId, address account, uint256 amount);
@@ -166,7 +167,9 @@ contract Gauge is IERC721, ERC721Enumerable {
         gaugeActive(gaugeId)
         updateGaugeReward(gaugeId)
     {
-        require(msg.sender == address(pMercForGauges[gaugeId]), "Gauge: invalid sender");
+        if (msg.sender != address(pMercForGauges[gaugeId])) {
+            revert InvalidSender();
+        }
         GaugeState storage g = gauges[gaugeId];
         g.pledges[who] += amount;
         g.weight += amount;
@@ -192,7 +195,9 @@ contract Gauge is IERC721, ERC721Enumerable {
         gaugeExists(gaugeId)
         updateGaugeReward(gaugeId)
     {
-        require(msg.sender == address(pMercForGauges[gaugeId]), "Gauge: invalid sender");
+        if (msg.sender != address(pMercForGauges[gaugeId])) {
+            revert InvalidSender();
+        }
         GaugeState storage g = gauges[gaugeId];
         if (amount > g.pledges[who]) {
             revert AmountTooHigh();
@@ -228,6 +233,9 @@ contract Gauge is IERC721, ERC721Enumerable {
         gaugeExists(gaugeId)
         updateStakingReward(gaugeId, who)
     {
+        if (msg.sender != address(sTokenForGauges[gaugeId])) {
+            revert InvalidSender();
+        }
         GaugeState storage g = gauges[gaugeId];
 
         g.totalStaked += amount;
@@ -253,6 +261,9 @@ contract Gauge is IERC721, ERC721Enumerable {
         gaugeExists(gaugeId)
         updateStakingReward(gaugeId, who)
     {
+        if (msg.sender != address(sTokenForGauges[gaugeId])) {
+            revert InvalidSender();
+        }
         GaugeState storage g = gauges[gaugeId];
 
         if (amount > g.stakers[who].balance) {

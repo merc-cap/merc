@@ -8,6 +8,7 @@ import { MockERC20 } from "./MockERC20.sol";
 import { Gauge } from "../Gauge.sol";
 import "./CheatCodes.sol";
 import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
+import "./console.sol";
 
 
 contract PledgedMercTest is DSTest, ERC721TokenReceiver {
@@ -19,7 +20,8 @@ contract PledgedMercTest is DSTest, ERC721TokenReceiver {
     uint256 gaugeId;
 
     function setUp() public {
-        merc = new Merc(address(0));
+        console.log("in setup");
+        merc = new Merc(address(this));
         staked = new MockERC20();
         gauge = new Gauge(merc);
         merc.setMintReceiver(address(gauge));
