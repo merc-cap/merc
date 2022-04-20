@@ -19,9 +19,10 @@ contract PledgedMercTest is DSTest, ERC721TokenReceiver {
     uint256 gaugeId;
 
     function setUp() public {
-        merc = new Merc();
+        merc = new Merc(address(0));
         staked = new MockERC20();
         gauge = new Gauge(merc);
+        merc.setMintReceiver(address(gauge));
         merc.approve(address(gauge), 1e18);
         gaugeId = gauge.mint(address(this), staked);
         pMERC = gauge.pMercForGauges(gaugeId);

@@ -7,13 +7,13 @@ import { ERC4626 } from "./ERC4626.sol";
 import { IMerc } from "./interfaces/IMerc.sol";
 import { Gauge } from "./Gauge.sol";
 
-contract PledgedMerc is ERC4626, Initializable {
+contract StakedToken is ERC4626, Initializable {
 
     Gauge public gauge;
     uint256 public gaugeId;
     string private name_;
     string private symbol_;
-    uint256 private pledgedMerc;
+    uint256 private amountStaked;
 
     constructor() ERC4626(IERC20Metadata(address(0)), "", "") {
     }
@@ -25,10 +25,13 @@ contract PledgedMerc is ERC4626, Initializable {
         name_ = _name;
         symbol_ = _symbol;
 
-        if (address(gauge) != address(0)) {
-            // need to handle the case where we initialize with all zeros
-            asset.approve(address(gauge), type(uint256).max);
-        }
+        // need to handle the case where we initialize with all zeros
+        if (address(_asset) != address(0)) {
+            decimals_ = _asset.decimals();
+            if (address(gauge) != address(0)) {
+                asset.approve(address(gauge), type(uint256).max);
+            }
+        } 
     }
 
     /**
@@ -46,23 +49,22 @@ contract PledgedMerc is ERC4626, Initializable {
         return symbol_;
     }
 
-
     /**
      * @dev Returns the amount of Merc in this vault
      */
     function totalAssets() public override view returns (uint256) {
-        return pledgedMerc;
+        return amountStaked;
     }
 
     function beforeWithdraw(uint256 assets, uint256 shares, address owner) internal override {
         shares;
-        pledgedMerc -= assets;
-        gauge.depledge(gaugeId, assets, owner);
+        amountStaked -= assets;
+        gauge.unstake(gaugeId, assets, owner);
     }
 
     function afterDeposit(uint256 assets, uint256 shares, address receiver) internal override {
         shares;
-        pledgedMerc += assets;
-        gauge.pledge(gaugeId, assets, receiver);
+        amountStaked += assets;
+        gauge.stake(gaugeId, assets, receiver);
     }
 }

@@ -30,12 +30,8 @@ abstract contract ERC4626 is ERC20 {
         uint256 shares
     );
 
-    /*//////////////////////////////////////////////////////////////
-                               IMMUTABLES
-    //////////////////////////////////////////////////////////////*/
-
-    IERC20Metadata public immutable asset;
-    uint8 public immutable decimals_;
+    IERC20Metadata public asset;
+    uint8 public decimals_;
 
     constructor(
         IERC20Metadata _asset,
@@ -43,7 +39,9 @@ abstract contract ERC4626 is ERC20 {
         string memory _symbol
     ) ERC20(_name, _symbol) {
         asset = _asset;
-        decimals_ = _asset.decimals();
+        if (address(_asset) != address(0)) {
+            decimals_ = _asset.decimals();
+        }
     }
 
     function decimals() public view override returns (uint8) {

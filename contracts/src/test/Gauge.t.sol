@@ -106,10 +106,11 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testStake() public {
         uint256 gaugeId = _mintedGauge();
+        StakedToken sToken = gauge.sTokenForGauges(gaugeId);
         uint256 amountToStake = 400e18;
 
-        token.approve(address(gauge), amountToStake);
-        gauge.stake(gaugeId, amountToStake);
+        token.approve(address(sToken), amountToStake);
+        sToken.deposit(amountToStake, address(this));
 
         assertEq(token.balanceOf(address(gauge)), amountToStake);
 
@@ -123,15 +124,17 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testStakeTwoGauges() public {
         uint256 gaugeId = _mintedGauge();
+        StakedToken sToken = gauge.sTokenForGauges(gaugeId);
         uint256 gaugeId2 = _mintedGauge();
+        StakedToken sToken2 = gauge.sTokenForGauges(gaugeId2);
 
         uint256 amountToStake1 = 3e18;
-        token.approve(address(gauge), amountToStake1);
-        gauge.stake(gaugeId, amountToStake1);
+        token.approve(address(sToken), amountToStake1);
+        sToken.deposit(amountToStake1, address(this));
 
         uint256 amountToStake2 = 5e18;
-        token.approve(address(gauge), amountToStake2);
-        gauge.stake(gaugeId2, amountToStake2);
+        token.approve(address(sToken2), amountToStake2);
+        sToken2.deposit(amountToStake2, address(this));
 
         cheats.warp(block.timestamp + 1);
 
@@ -158,16 +161,17 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testAliceBobMultiGauge() public {
         uint256 gaugeId = _mintedGauge();
+        StakedToken sToken = gauge.sTokenForGauges(gaugeId);
 
         address alice = address(0xaa);
         token.mint(alice, 1000);
         cheats.prank(alice);
-        token.approve(address(gauge), 1000);
+        token.approve(address(sToken), 1000);
 
         address bob = address(0xbb);
         token.mint(bob, 1000);
         cheats.prank(bob);
-        token.approve(address(gauge), 1000);
+        token.approve(address(sToken), 1000);
 
         uint256 t = block.timestamp;
 
@@ -180,14 +184,14 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
         // Alice stakes 1000
         cheats.prank(alice);
-        gauge.stake(gaugeId, 1000);
+        sToken.deposit(1000, alice);
 
         // t+5
         cheats.warp(t + 5);
 
         // 4 ticks later, bob stakes.
         cheats.prank(bob);
-        gauge.stake(gaugeId, 1000);
+        sToken.deposit(1000, bob);
 
         // At this point, alice should have 4 ticks wrth of rewards
         // cheats.prank(alice);
@@ -234,7 +238,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
         // Alice is now going to fully unstake
         assertEq(gauge.staked(gaugeId, alice), 1000);
         cheats.prank(alice);
-        gauge.unstake(gaugeId, 1000);
+        sToken.withdraw(1000, alice, alice);
         assertEq(gauge.staked(gaugeId, alice), 0);
 
         // t+20
