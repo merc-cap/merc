@@ -3,24 +3,22 @@ pragma solidity ^0.8.10;
 
 import "ds-test/test.sol";
 import "../Merc.sol";
-import { PledgedMerc } from "../PledgedMerc.sol";
+import { PledgingVault } from "../PledgingVault.sol";
 import { MockERC20 } from "./MockERC20.sol";
 import { Gauge } from "../Gauge.sol";
 import "./CheatCodes.sol";
 import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
-import "./console.sol";
 
 
-contract PledgedMercTest is DSTest, ERC721TokenReceiver {
+contract PledgingVaultTest is DSTest, ERC721TokenReceiver {
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
     Merc merc;
     MockERC20 staked;
-    PledgedMerc pMERC;
+    PledgingVault pMERC;
     Gauge gauge;
     uint256 gaugeId;
 
     function setUp() public {
-        console.log("in setup");
         merc = new Merc(address(this));
         staked = new MockERC20();
         gauge = new Gauge(merc);

@@ -5,7 +5,6 @@ import { ERC20 } from "openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20Metadata } from "openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { FixedPointMathLib } from "solmate/utils/FixedPointMathLib.sol";
-import "./test/console.sol";
 
 
 /**
@@ -154,9 +153,6 @@ abstract contract ERC4626 is ERC20 {
 
     function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
         uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
-        console.log("supply", supply);
-        console.log("total assets", totalAssets());
-
         return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
     }
 

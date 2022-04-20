@@ -7,7 +7,7 @@ import { ERC4626 } from "./ERC4626.sol";
 import { IMerc } from "./interfaces/IMerc.sol";
 import { Gauge } from "./Gauge.sol";
 
-contract StakedToken is ERC4626, Initializable {
+contract StakingVault is ERC4626, Initializable {
 
     Gauge public gauge;
     uint256 public gaugeId;

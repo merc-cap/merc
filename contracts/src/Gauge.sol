@@ -12,8 +12,8 @@ import "openzeppelin/contracts/utils/Strings.sol";
 import "base64/base64.sol";
 import "hot-chain-svg/SVG.sol";
 import "./interfaces/IMerc.sol";
-import "./PledgedMerc.sol";
-import "./StakedToken.sol";
+import "./PledgingVault.sol";
+import "./StakingVault.sol";
 import "./test/console.sol";
 
 contract Gauge is IERC721, ERC721Enumerable {
@@ -50,10 +50,10 @@ contract Gauge is IERC721, ERC721Enumerable {
     uint8 constant BURN_WEIGHT_COEFF = 10;
 
     IMerc public immutable merc;
-    PledgedMerc private immutable defaultPledgedMerc;
-    mapping(uint256 => PledgedMerc) public pMercForGauges;
-    StakedToken private immutable defaultStakedToken;
-    mapping(uint256 => StakedToken) public sTokenForGauges;
+    PledgingVault private immutable defaultPledgingVault;
+    mapping(uint256 => PledgingVault) public pMercForGauges;
+    StakingVault private immutable defaultStakingVault;
+    mapping(uint256 => StakingVault) public sTokenForGauges;
 
     uint256 public tokenCount;
     uint256 public mintPrice;
@@ -82,12 +82,12 @@ contract Gauge is IERC721, ERC721Enumerable {
     constructor(IMerc _merc) ERC721("Mercenary Gauge", "gMERC") {
         merc = _merc;
         mintPrice = 10**merc.decimals();
-        defaultPledgedMerc = new PledgedMerc();
+        defaultPledgingVault = new PledgingVault();
         // economically impossible to mint uint256.max gauges
-        defaultPledgedMerc.initialize(Gauge(address(0)), type(uint256).max, IERC20Metadata(address(0)), "", "");
+        defaultPledgingVault.initialize(Gauge(address(0)), type(uint256).max, IERC20Metadata(address(0)), "", "");
 
-        defaultStakedToken = new StakedToken();
-        defaultStakedToken.initialize(Gauge(address(0)), type(uint256).max, IERC20Metadata(address(0)), "", "");
+        defaultStakingVault = new StakingVault();
+        defaultStakingVault.initialize(Gauge(address(0)), type(uint256).max, IERC20Metadata(address(0)), "", "");
         createTime = block.timestamp;
     }
 
@@ -110,11 +110,11 @@ contract Gauge is IERC721, ERC721Enumerable {
         mintPrice = mintPrice * 2;
 
         string memory idStr = Strings.toString(id);
-        PledgedMerc pMerc = PledgedMerc(Clones.clone(address(defaultPledgedMerc)));
+        PledgingVault pMerc = PledgingVault(Clones.clone(address(defaultPledgingVault)));
         pMerc.initialize(this, id, merc, string.concat("Pledged Merc Gauge ", idStr), string.concat("pMERC-", idStr));
         pMercForGauges[id] = pMerc;
 
-        StakedToken sToken = StakedToken(Clones.clone(address(defaultStakedToken)));
+        StakingVault sToken = StakingVault(Clones.clone(address(defaultStakingVault)));
         sToken.initialize(this, id, stakingToken, string.concat("Merc Gauge ", idStr, " ", stakingToken.name()), string.concat("MG-", idStr, "-", stakingToken.symbol()));
         sTokenForGauges[id] = sToken;
 
