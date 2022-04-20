@@ -103,7 +103,7 @@ contract Gauge is IERC721, ERC721Enumerable {
 
         string memory idStr = Strings.toString(id);
         PledgedMerc pMerc = PledgedMerc(Clones.clone(address(defaultPledgedMerc)));
-        pMerc.initialize(this, id, string(abi.encodePacked("Pledged Merc Gauge ", idStr)), string(abi.encodePacked("pMERC-", idStr)));
+        pMerc.initialize(this, id, string.concat("Pledged Merc Gauge ", idStr), string.concat("pMERC-", idStr));
         pMercForGauges[id] = pMerc;
 
         return id;
