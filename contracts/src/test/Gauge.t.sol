@@ -46,7 +46,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testRecycle() public {
         uint256 gaugeId = _mintedGauge();
-        PledgingVault oldpMerc = gauge.pMercForGauges(gaugeId);
+        PledgingVault oldpMerc = gauge.pledgingVaultOf(gaugeId);
         MockERC20 newToken = new MockERC20();
         uint256 newGaugeId = gauge.recycle(gaugeId, newToken);
 
@@ -66,7 +66,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testCannotPledgeToRecycledGauge() public {
         uint256 gaugeId = _mintedGauge();
-        PledgingVault oldpMerc = gauge.pMercForGauges(gaugeId);
+        PledgingVault oldpMerc = gauge.pledgingVaultOf(gaugeId);
         merc.approve(address(oldpMerc), 1);
 
         MockERC20 newToken = new MockERC20();
@@ -86,7 +86,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testPledge() public {
         uint256 gaugeId = _mintedGauge();
-        PledgingVault pMerc = gauge.pMercForGauges(gaugeId);
+        PledgingVault pMerc = gauge.pledgingVaultOf(gaugeId);
         merc.approve(address(pMerc), 1000);
         pMerc.deposit(1000, address(this));
         assertEq(gauge.weightOf(gaugeId), 1e18 + 1000);
@@ -106,7 +106,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testStake() public {
         uint256 gaugeId = _mintedGauge();
-        StakingVault sToken = gauge.sTokenForGauges(gaugeId);
+        StakingVault sToken = gauge.stakingVaultOf(gaugeId);
         uint256 amountToStake = 400e18;
 
         token.approve(address(sToken), amountToStake);
@@ -124,9 +124,9 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testStakeTwoGauges() public {
         uint256 gaugeId = _mintedGauge();
-        StakingVault sToken = gauge.sTokenForGauges(gaugeId);
+        StakingVault sToken = gauge.stakingVaultOf(gaugeId);
         uint256 gaugeId2 = _mintedGauge();
-        StakingVault sToken2 = gauge.sTokenForGauges(gaugeId2);
+        StakingVault sToken2 = gauge.stakingVaultOf(gaugeId2);
 
         uint256 amountToStake1 = 3e18;
         token.approve(address(sToken), amountToStake1);
@@ -161,7 +161,7 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
 
     function testAliceBobMultiGauge() public {
         uint256 gaugeId = _mintedGauge();
-        StakingVault sToken = gauge.sTokenForGauges(gaugeId);
+        StakingVault sToken = gauge.stakingVaultOf(gaugeId);
 
         address alice = address(0xaa);
         token.mint(alice, 1000);

@@ -25,7 +25,7 @@ contract PledgingVaultTest is DSTest, ERC721TokenReceiver {
         merc.setMintReceiver(address(gauge));
         merc.approve(address(gauge), 1e18);
         gaugeId = gauge.mint(address(this), staked);
-        pMERC = gauge.pMercForGauges(gaugeId);
+        pMERC = gauge.pledgingVaultOf(gaugeId);
     }
 
     function testCanDepositAndWithdraw() public {

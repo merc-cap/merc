@@ -51,9 +51,7 @@ contract Gauge is IERC721, ERC721Enumerable {
 
     IMerc public immutable merc;
     PledgingVault private immutable defaultPledgingVault;
-    mapping(uint256 => PledgingVault) public pMercForGauges;
     StakingVault private immutable defaultStakingVault;
-    mapping(uint256 => StakingVault) public sTokenForGauges;
 
     uint256 public tokenCount;
     uint256 public mintPrice;
@@ -66,6 +64,8 @@ contract Gauge is IERC721, ERC721Enumerable {
 
     struct GaugeState {
         IERC20Metadata stakingToken;
+        StakingVault stakingVault;
+        PledgingVault pledgingVault;
         uint256 totalStaked;
         mapping(address => GaugeStakerState) stakers;
         uint256 weight;
@@ -110,13 +110,11 @@ contract Gauge is IERC721, ERC721Enumerable {
         mintPrice = mintPrice * 2;
 
         string memory idStr = Strings.toString(id);
-        PledgingVault pMerc = PledgingVault(Clones.clone(address(defaultPledgingVault)));
-        pMerc.initialize(this, id, merc, string.concat("Pledged Merc Gauge ", idStr), string.concat("pMERC-", idStr));
-        pMercForGauges[id] = pMerc;
+        gauges[id].pledgingVault = PledgingVault(Clones.clone(address(defaultPledgingVault)));
+        gauges[id].pledgingVault.initialize(this, id, merc, string.concat("Pledged Merc Gauge ", idStr), string.concat("pMERC-", idStr));
 
-        StakingVault sToken = StakingVault(Clones.clone(address(defaultStakingVault)));
-        sToken.initialize(this, id, stakingToken, string.concat("Merc Gauge ", idStr, " ", stakingToken.name()), string.concat("MG-", idStr, "-", stakingToken.symbol()));
-        sTokenForGauges[id] = sToken;
+        gauges[id].stakingVault = StakingVault(Clones.clone(address(defaultStakingVault)));
+        gauges[id].stakingVault.initialize(this, id, stakingToken, string.concat("Merc Gauge ", idStr, " ", stakingToken.name()), string.concat("MG-", idStr, "-", stakingToken.symbol()));
 
         return id;
     }
@@ -161,16 +159,21 @@ contract Gauge is IERC721, ERC721Enumerable {
         return g.weight - g.totalPledged;
     }
 
+    function pledgingVaultOf(uint256 gaugeId) public view returns(PledgingVault) {
+        GaugeState storage g = gauges[gaugeId];
+        return g.pledgingVault;
+    }
+
     function pledge(uint256 gaugeId, uint256 amount, address who)
         public
         gaugeExists(gaugeId)
         gaugeActive(gaugeId)
         updateGaugeReward(gaugeId)
     {
-        if (msg.sender != address(pMercForGauges[gaugeId])) {
+        GaugeState storage g = gauges[gaugeId];
+        if (msg.sender != address(g.pledgingVault)) {
             revert InvalidSender();
         }
-        GaugeState storage g = gauges[gaugeId];
         g.pledges[who] += amount;
         g.weight += amount;
         g.totalPledged += amount;
@@ -195,10 +198,10 @@ contract Gauge is IERC721, ERC721Enumerable {
         gaugeExists(gaugeId)
         updateGaugeReward(gaugeId)
     {
-        if (msg.sender != address(pMercForGauges[gaugeId])) {
+        GaugeState storage g = gauges[gaugeId];
+        if (msg.sender != address(g.pledgingVault)) {
             revert InvalidSender();
         }
-        GaugeState storage g = gauges[gaugeId];
         if (amount > g.pledges[who]) {
             revert AmountTooHigh();
         }
@@ -228,15 +231,21 @@ contract Gauge is IERC721, ERC721Enumerable {
         emit Burn(gaugeId, msg.sender, amount);
     }
 
+    function stakingVaultOf(uint256 gaugeId) public view returns(StakingVault) {
+        GaugeState storage g = gauges[gaugeId];
+        return g.stakingVault;
+    }
+
     function stake(uint256 gaugeId, uint256 amount, address who)
         public
         gaugeExists(gaugeId)
         updateStakingReward(gaugeId, who)
     {
-        if (msg.sender != address(sTokenForGauges[gaugeId])) {
+        GaugeState storage g = gauges[gaugeId];
+
+        if (msg.sender != address(g.stakingVault)) {
             revert InvalidSender();
         }
-        GaugeState storage g = gauges[gaugeId];
 
         g.totalStaked += amount;
         g.stakers[who].balance += amount;
@@ -261,10 +270,11 @@ contract Gauge is IERC721, ERC721Enumerable {
         gaugeExists(gaugeId)
         updateStakingReward(gaugeId, who)
     {
-        if (msg.sender != address(sTokenForGauges[gaugeId])) {
+        GaugeState storage g = gauges[gaugeId];
+
+        if (msg.sender != address(g.stakingVault)) {
             revert InvalidSender();
         }
-        GaugeState storage g = gauges[gaugeId];
 
         if (amount > g.stakers[who].balance) {
             revert AmountTooHigh();
