@@ -26,11 +26,9 @@ contract StakingVault is ERC4626, Initializable {
         symbol_ = _symbol;
 
         // need to handle the case where we initialize with all zeros
-        if (address(_asset) != address(0)) {
+        if (address(_asset) != address(0) && address(gauge) != address(0)) {
             decimals_ = _asset.decimals();
-            if (address(gauge) != address(0)) {
-                asset.approve(address(gauge), type(uint256).max);
-            }
+            asset.approve(address(gauge), type(uint256).max);
         } 
     }
 
