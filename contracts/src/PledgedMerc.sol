@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-import { Initializable } from "openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { ERC4626 } from "./ERC4626.sol";
 import { IMerc } from "./interfaces/IMerc.sol";
 import { Gauge } from "./Gauge.sol";

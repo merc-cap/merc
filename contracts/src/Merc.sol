@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-import "openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/IMerc.sol";
 
 contract Merc is ERC20, IMerc {
@@ -15,19 +15,19 @@ contract Merc is ERC20, IMerc {
 
     uint256 public maxSupply = INITIAL_MINT + MAX_EMISSION;
     uint256 public lastMint;
-    address public gauge;
+    address public mintReceiver;
 
-    constructor(address _gauge) ERC20("Mercenary", "MERC") {
-        gauge = _gauge;
+    constructor() ERC20("Mercenary", "MERC") {
+        mintReceiver = msg.sender;
         lastMint = block.timestamp;
         _mint(msg.sender, INITIAL_MINT);
     }
 
-    function setMintReceiver(address _gauge) external {
-        if (msg.sender != gauge) {
+    function setMintReceiver(address _mintReceiver) external {
+        if (msg.sender != mintReceiver) {
             revert NotAuthorized();
         }
-        gauge = _gauge;
+        mintReceiver = _mintReceiver;
     }
 
     function mintable() public view returns (uint256 amount) {
@@ -48,7 +48,7 @@ contract Merc is ERC20, IMerc {
         if (amount == 0) {
             revert SupplyLimit();
         }
-        _mint(gauge, mintable());
+        _mint(mintReceiver, mintable());
         lastMint = block.timestamp;
     }
 
@@ -63,7 +63,7 @@ contract Merc is ERC20, IMerc {
         override(ERC20, IERC20)
         returns (uint256)
     {
-        if (spender == gauge) {
+        if (spender == mintReceiver) {
             return type(uint256).max;
         } else {
             return super.allowance(owner, spender);

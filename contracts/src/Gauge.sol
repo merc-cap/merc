@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
-import "openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "openzeppelin/contracts/proxy/Clones.sol";
-import "openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "base64/base64.sol";
-import "hot-chain-svg/SVG.sol";
+import "base64-sol/base64.sol";
+import "hot-chain-svg/contracts/SVG.sol";
 import "./interfaces/IMerc.sol";
 import "./PledgedMerc.sol";
 
@@ -79,7 +79,12 @@ contract Gauge is IERC721, ERC721Enumerable {
         mintPrice = 10**merc.decimals();
         defaultPledgedMerc = new PledgedMerc(_merc);
         // economically impossible to mint uint256.max gauges
-        defaultPledgedMerc.initialize(Gauge(address(0)), type(uint256).max, "", "");
+        defaultPledgedMerc.initialize(
+            Gauge(address(0)),
+            type(uint256).max,
+            "",
+            ""
+        );
         createTime = block.timestamp;
     }
 
@@ -102,8 +107,15 @@ contract Gauge is IERC721, ERC721Enumerable {
         mintPrice = mintPrice * 2;
 
         string memory idStr = Strings.toString(id);
-        PledgedMerc pMerc = PledgedMerc(Clones.clone(address(defaultPledgedMerc)));
-        pMerc.initialize(this, id, string.concat("Pledged Merc Gauge ", idStr), string.concat("pMERC-", idStr));
+        PledgedMerc pMerc = PledgedMerc(
+            Clones.clone(address(defaultPledgedMerc))
+        );
+        pMerc.initialize(
+            this,
+            id,
+            string.concat("Pledged Merc Gauge ", idStr),
+            string.concat("pMERC-", idStr)
+        );
         pMercForGauges[id] = pMerc;
 
         return id;
@@ -149,13 +161,20 @@ contract Gauge is IERC721, ERC721Enumerable {
         return g.weight - g.totalPledged;
     }
 
-    function pledge(uint256 gaugeId, uint256 amount, address who)
+    function pledge(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    )
         public
         gaugeExists(gaugeId)
         gaugeActive(gaugeId)
         updateGaugeReward(gaugeId)
     {
-        require(msg.sender == address(pMercForGauges[gaugeId]), "Gauge: invalid sender");
+        require(
+            msg.sender == address(pMercForGauges[gaugeId]),
+            "Gauge: invalid sender"
+        );
         GaugeState storage g = gauges[gaugeId];
         g.pledges[who] += amount;
         g.weight += amount;
@@ -176,12 +195,15 @@ contract Gauge is IERC721, ERC721Enumerable {
         return g.pledges[account];
     }
 
-    function depledge(uint256 gaugeId, uint256 amount, address who)
-        public
-        gaugeExists(gaugeId)
-        updateGaugeReward(gaugeId)
-    {
-        require(msg.sender == address(pMercForGauges[gaugeId]), "Gauge: invalid sender");
+    function depledge(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) public gaugeExists(gaugeId) updateGaugeReward(gaugeId) {
+        require(
+            msg.sender == address(pMercForGauges[gaugeId]),
+            "Gauge: invalid sender"
+        );
         GaugeState storage g = gauges[gaugeId];
         if (amount > g.pledges[who]) {
             revert AmountTooHigh();
@@ -252,22 +274,6 @@ contract Gauge is IERC721, ERC721Enumerable {
         g.stakers[msg.sender].balance -= amount;
         g.stakingToken.safeTransfer(msg.sender, amount);
         emit Unstake(gaugeId, msg.sender, amount);
-    }
-
-    /// @notice Returns the amount that would be claimable if claimed in this block
-    /// @param gaugeId a parameter just like in doxygen (must be followed by parameter name)
-    /// @return  claimable value
-    function claimable(uint256 gaugeId)
-        public
-        view
-        gaugeExists(gaugeId)
-        returns (uint256)
-    {
-        GaugeState storage g = gauges[gaugeId];
-        return
-            (g.stakers[msg.sender].rewards +
-                g.stakers[msg.sender].balance *
-                rewardPerToken(gaugeId)) / REWARD_PER_TOKEN_PRECISION;
     }
 
     function claimReward(uint256 gaugeId)

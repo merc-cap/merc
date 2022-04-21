@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-import "ds-test/test.sol";
-import "../Merc.sol";
-import { PledgedMerc } from "../PledgedMerc.sol";
-import { MockERC20 } from "./MockERC20.sol";
-import { Gauge } from "../Gauge.sol";
+// import "ds-test/src/test.sol";
+import "../node_modules/ds-test/src/test.sol";
+import "../src/Merc.sol";
+import {PledgedMerc} from "../src/PledgedMerc.sol";
+import {MockERC20} from "./MockERC20.sol";
+import {Gauge} from "../src/Gauge.sol";
 import "./CheatCodes.sol";
-import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
-
+import {ERC721TokenReceiver} from "@rari-capital/solmate/src/tokens/ERC721.sol";
 
 contract PledgedMercTest is DSTest, ERC721TokenReceiver {
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
@@ -22,6 +22,7 @@ contract PledgedMercTest is DSTest, ERC721TokenReceiver {
         merc = new Merc();
         staked = new MockERC20();
         gauge = new Gauge(merc);
+        merc.setMintReceiver(address(gauge));
         merc.approve(address(gauge), 1e18);
         gaugeId = gauge.mint(address(this), staked);
         pMERC = gauge.pMercForGauges(gaugeId);

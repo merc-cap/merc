@@ -1,5 +1,0 @@
-solmate/=lib/solmate/src/
-ds-test/=lib/ds-test/src/
-openzeppelin/=lib/openzeppelin-contracts/
-hot-chain-svg/=lib/hot-chain-svg/contracts/
-base64/=lib/base64/
