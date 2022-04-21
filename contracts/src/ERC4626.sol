@@ -5,7 +5,6 @@ import { ERC20 } from "openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20Metadata } from "openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { FixedPointMathLib } from "solmate/utils/FixedPointMathLib.sol";
-import "./test/console.sol";
 
 
 /**
@@ -30,12 +29,8 @@ abstract contract ERC4626 is ERC20 {
         uint256 shares
     );
 
-    /*//////////////////////////////////////////////////////////////
-                               IMMUTABLES
-    //////////////////////////////////////////////////////////////*/
-
-    IERC20Metadata public immutable asset;
-    uint8 public immutable decimals_;
+    IERC20Metadata public asset;
+    uint8 public decimals_;
 
     constructor(
         IERC20Metadata _asset,
@@ -43,7 +38,9 @@ abstract contract ERC4626 is ERC20 {
         string memory _symbol
     ) ERC20(_name, _symbol) {
         asset = _asset;
-        decimals_ = _asset.decimals();
+        if (address(_asset) != address(0)) {
+            decimals_ = _asset.decimals();
+        }
     }
 
     function decimals() public view override returns (uint8) {
@@ -156,9 +153,6 @@ abstract contract ERC4626 is ERC20 {
 
     function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
         uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply is non-zero.
-        console.log("supply", supply);
-        console.log("total assets", totalAssets());
-
         return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
     }
 
