@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-import "ds-test/test.sol";
-import "../Gauge.sol";
+import "../node_modules/ds-test/src/test.sol";
+import "../src/Gauge.sol";
 import "./MockMerc.sol";
 import "./MockERC20.sol";
 import "./CheatCodes.sol";
 
-import {ERC721TokenReceiver} from "solmate/tokens/ERC721.sol";
+import {ERC721TokenReceiver} from "@rari-capital/solmate/src/tokens/ERC721.sol";
 
 contract GaugeTest is DSTest, ERC721TokenReceiver {
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);

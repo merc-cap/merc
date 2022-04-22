@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
-import "openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "openzeppelin/contracts/proxy/Clones.sol";
-import "openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "base64/base64.sol";
-import "hot-chain-svg/SVG.sol";
+import "base64-sol/base64.sol";
+import "hot-chain-svg/contracts/SVG.sol";
 import "./interfaces/IMerc.sol";
 import "./PledgingVault.sol";
 import "./StakingVault.sol";
-import "./test/console.sol";
+import "../test/console.sol";
 
 contract Gauge is IERC721, ERC721Enumerable {
     using SafeERC20 for IERC20Metadata;
@@ -84,10 +84,22 @@ contract Gauge is IERC721, ERC721Enumerable {
         mintPrice = 10**merc.decimals();
         defaultPledgingVault = new PledgingVault();
         // economically impossible to mint uint256.max gauges
-        defaultPledgingVault.initialize(Gauge(address(0)), type(uint256).max, IERC20Metadata(address(0)), "", "");
+        defaultPledgingVault.initialize(
+            Gauge(address(0)),
+            type(uint256).max,
+            IERC20Metadata(address(0)),
+            "",
+            ""
+        );
 
         defaultStakingVault = new StakingVault();
-        defaultStakingVault.initialize(Gauge(address(0)), type(uint256).max, IERC20Metadata(address(0)), "", "");
+        defaultStakingVault.initialize(
+            Gauge(address(0)),
+            type(uint256).max,
+            IERC20Metadata(address(0)),
+            "",
+            ""
+        );
         createTime = block.timestamp;
     }
 
@@ -110,11 +122,27 @@ contract Gauge is IERC721, ERC721Enumerable {
         mintPrice = mintPrice * 2;
 
         string memory idStr = Strings.toString(id);
-        gauges[id].pledgingVault = PledgingVault(Clones.clone(address(defaultPledgingVault)));
-        gauges[id].pledgingVault.initialize(this, id, merc, string.concat("Pledged Merc Gauge ", idStr), string.concat("pMERC-", idStr));
+        gauges[id].pledgingVault = PledgingVault(
+            Clones.clone(address(defaultPledgingVault))
+        );
+        gauges[id].pledgingVault.initialize(
+            this,
+            id,
+            merc,
+            string.concat("Pledged Merc Gauge ", idStr),
+            string.concat("pMERC-", idStr)
+        );
 
-        gauges[id].stakingVault = StakingVault(Clones.clone(address(defaultStakingVault)));
-        gauges[id].stakingVault.initialize(this, id, stakingToken, string.concat("Merc Gauge ", idStr, " ", stakingToken.name()), string.concat("MG-", idStr, "-", stakingToken.symbol()));
+        gauges[id].stakingVault = StakingVault(
+            Clones.clone(address(defaultStakingVault))
+        );
+        gauges[id].stakingVault.initialize(
+            this,
+            id,
+            stakingToken,
+            string.concat("Merc Gauge ", idStr, " ", stakingToken.name()),
+            string.concat("MG-", idStr, "-", stakingToken.symbol())
+        );
 
         return id;
     }
@@ -159,12 +187,20 @@ contract Gauge is IERC721, ERC721Enumerable {
         return g.weight - g.totalPledged;
     }
 
-    function pledgingVaultOf(uint256 gaugeId) public view returns(PledgingVault) {
+    function pledgingVaultOf(uint256 gaugeId)
+        public
+        view
+        returns (PledgingVault)
+    {
         GaugeState storage g = gauges[gaugeId];
         return g.pledgingVault;
     }
 
-    function pledge(uint256 gaugeId, uint256 amount, address who)
+    function pledge(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    )
         public
         gaugeExists(gaugeId)
         gaugeActive(gaugeId)
@@ -193,11 +229,11 @@ contract Gauge is IERC721, ERC721Enumerable {
         return g.pledges[account];
     }
 
-    function depledge(uint256 gaugeId, uint256 amount, address who)
-        public
-        gaugeExists(gaugeId)
-        updateGaugeReward(gaugeId)
-    {
+    function depledge(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) public gaugeExists(gaugeId) updateGaugeReward(gaugeId) {
         GaugeState storage g = gauges[gaugeId];
         if (msg.sender != address(g.pledgingVault)) {
             revert InvalidSender();
@@ -231,16 +267,20 @@ contract Gauge is IERC721, ERC721Enumerable {
         emit Burn(gaugeId, msg.sender, amount);
     }
 
-    function stakingVaultOf(uint256 gaugeId) public view returns(StakingVault) {
+    function stakingVaultOf(uint256 gaugeId)
+        public
+        view
+        returns (StakingVault)
+    {
         GaugeState storage g = gauges[gaugeId];
         return g.stakingVault;
     }
 
-    function stake(uint256 gaugeId, uint256 amount, address who)
-        public
-        gaugeExists(gaugeId)
-        updateStakingReward(gaugeId, who)
-    {
+    function stake(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) public gaugeExists(gaugeId) updateStakingReward(gaugeId, who) {
         GaugeState storage g = gauges[gaugeId];
 
         if (msg.sender != address(g.stakingVault)) {
@@ -265,11 +305,11 @@ contract Gauge is IERC721, ERC721Enumerable {
         return gauges[gaugeId].stakers[account].balance;
     }
 
-    function unstake(uint256 gaugeId, uint256 amount, address who)
-        public
-        gaugeExists(gaugeId)
-        updateStakingReward(gaugeId, who)
-    {
+    function unstake(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) public gaugeExists(gaugeId) updateStakingReward(gaugeId, who) {
         GaugeState storage g = gauges[gaugeId];
 
         if (msg.sender != address(g.stakingVault)) {

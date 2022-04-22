@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-import "ds-test/test.sol";
-import "../Merc.sol";
+import "../node_modules/ds-test/src/test.sol";
+import "../src/Merc.sol";
 import "./CheatCodes.sol";
 import "./console.sol";
 
@@ -13,11 +13,12 @@ contract MercTest is DSTest {
     address user = address(0x02);
 
     function setUp() public {
-        merc = new Merc(gauge);
+        merc = new Merc();
+        merc.setMintReceiver(gauge);
     }
 
     function testInitialValues() public {
-        assertEq(merc.gauge(), gauge);
+        assertEq(merc.mintReceiver(), gauge);
         assertEq(merc.balanceOf(address(this)), merc.INITIAL_MINT());
         assertEq(merc.lastMint(), block.timestamp);
         assertEq(merc.mintable(), 0);
