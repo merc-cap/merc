@@ -41,6 +41,8 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     localhost: {
+      chainId: 1337,
+      live: false,
       saveDeployments: false,
     },
   },
