@@ -7,7 +7,6 @@ import "../node_modules/solidity-stringutils/src/strings.sol";
 import "../node_modules/base64-sol/base64.sol";
 import "./console.sol";
 import "../src/Renderer.sol";
-import "../src/interfaces/IRenderer.sol";
 import "../src/interfaces/IGauge.sol";
 import "./MockMerc.sol";
 import "./MockGauge.sol";
@@ -16,7 +15,7 @@ contract RendererTest is DSTest {
     using strings for *;
 
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
-    IRenderer public renderer;
+    Renderer public renderer;
 
     function setUp() public {
         MockMerc m = new MockMerc();
@@ -44,6 +43,11 @@ contract RendererTest is DSTest {
             .toString();
 
         bytes memory result = Base64.decode(data);
-        assertTrue(result.length > 100);
+        assertTrue(result.length > 10);
     }
+
+    // function testLogSvgUri() public {
+    //     string memory uri = renderer.dataURISVG(2);
+    //     console.log(uri);
+    // }
 }

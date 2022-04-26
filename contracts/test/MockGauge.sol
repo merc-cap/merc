@@ -14,7 +14,7 @@ contract MockGauge is ERC721Enumerable, IGauge {
     MockERC20 _stakingToken;
     MockMerc _mockMerc;
 
-    constructor(IMerc _merc) ERC721("Mock Gauge", "mGauge") {
+    constructor(IMerc) ERC721("Mock Gauge", "mGauge") {
         _stakingToken = new MockERC20();
         _mockMerc = new MockMerc();
     }
@@ -23,7 +23,51 @@ contract MockGauge is ERC721Enumerable, IGauge {
         return _mockMerc;
     }
 
-    function stakingToken(uint256 gaugeId)
+    function totalWeight() external view returns (uint256) {
+        return 10000;
+    }
+
+    function weightOf(uint256) public pure returns (uint256) {
+        return 100e18;
+    }
+
+    function pledged(uint256) public pure returns (uint256) {
+        return 100;
+    }
+
+    function burnedWeightOf(uint256) public pure returns (uint256) {
+        return 30e18;
+    }
+
+    // function pledgingVaultOf(uint256 gaugeId)
+    //     public
+    //     view
+    //     returns (PledgingVault)
+    // {
+    //     return PledgingVault(address(0));
+    // }
+
+    function pledge(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) public {}
+
+    function pledged(uint256 gaugeId, address account)
+        public
+        view
+        returns (uint256)
+    {}
+
+    function depledge(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) public {}
+
+    function burn(uint256 gaugeId, uint256 amount) public {}
+
+    function stakingToken(uint256)
         external
         view
         override
@@ -32,12 +76,43 @@ contract MockGauge is ERC721Enumerable, IGauge {
         return IERC20Metadata(_stakingToken);
     }
 
-    function weightOf(uint256 gaugeId)
-        external
-        pure
-        override
-        returns (uint256)
-    {
-        return 1e18;
+    // function stakingVaultOf(uint256 gaugeId)
+    //     public
+    //     view
+    //     returns (StakingVault)
+    // {
+    //     return StakingVault(address(0));
+    // }
+
+    function stake(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) public {}
+
+    function totalStaked(uint256) public pure returns (uint256) {
+        return 1;
+    }
+
+    function staked(uint256, address) public pure returns (uint256) {
+        return 1;
+    }
+
+    function unstake(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) public {}
+
+    function claimReward(uint256) public pure returns (uint256) {
+        return 100;
+    }
+
+    function rewardPerToken(uint256) public pure returns (uint256) {
+        return 1;
+    }
+
+    function earned(uint256, address) public pure returns (uint256) {
+        return 1;
     }
 }

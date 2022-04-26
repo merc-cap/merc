@@ -3,15 +3,70 @@ pragma solidity ^0.8.10;
 
 import "./IMerc.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
-interface IGauge is IERC721Enumerable {
+interface IGauge {
     function merc() external view returns (IMerc);
+
+    function totalWeight() external view returns (uint256);
+
+    function weightOf(uint256 gaugeId) external view returns (uint256);
+
+    function pledged(uint256 gaugeId) external view returns (uint256);
+
+    function burnedWeightOf(uint256 gaugeId) external view returns (uint256);
+
+    // function pledgingVaultOf(uint256 gaugeId)
+    //     external
+    //     view
+    //     returns (PledgingVault);
+
+    function pledge(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) external;
+
+    function pledged(uint256 gaugeId, address account)
+        external
+        view
+        returns (uint256);
+
+    function depledge(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) external;
+
+    function burn(uint256 gaugeId, uint256 amount) external;
 
     function stakingToken(uint256 gaugeId)
         external
         view
         returns (IERC20Metadata);
 
-    function weightOf(uint256 gaugeId) external view returns (uint256);
+    // function stakingVaultOf(uint256 gaugeId)
+    //     external
+    //     view
+    //     returns (StakingVault);
+
+    function stake(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) external;
+
+    function totalStaked(uint256 gaugeId) external view returns (uint256);
+
+    function staked(uint256 gaugeId, address account)
+        external
+        view
+        returns (uint256);
+
+    function unstake(
+        uint256 gaugeId,
+        uint256 amount,
+        address who
+    ) external;
+
+    function claimReward(uint256 gaugeId) external returns (uint256);
 }

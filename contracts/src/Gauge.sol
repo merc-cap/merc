@@ -18,7 +18,7 @@ import "./interfaces/IRenderer.sol";
 import "./interfaces/IGauge.sol";
 import "../test/console.sol";
 
-contract Gauge is ERC721Enumerable, Ownable, IGauge {
+contract Gauge is Ownable, ERC721Enumerable, IGauge {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IMerc;
 
@@ -204,6 +204,10 @@ contract Gauge is ERC721Enumerable, Ownable, IGauge {
         return gauges[gaugeId].weight;
     }
 
+    function pledged(uint256 gaugeId) public view returns (uint256) {
+        return gauges[gaugeId].totalPledged;
+    }
+
     function burnedWeightOf(uint256 gaugeId) public view returns (uint256) {
         State storage g = gauges[gaugeId];
         return g.weight - g.totalPledged;
@@ -354,22 +358,6 @@ contract Gauge is ERC721Enumerable, Ownable, IGauge {
         g.wallets[who].balance -= amount;
         g.stakingToken.safeTransfer(msg.sender, amount);
         emit Unstake(gaugeId, who, amount);
-    }
-
-    /// @notice Returns the amount that would be claimable if claimed in this block
-    /// @param gaugeId a parameter just like in doxygen (must be followed by parameter name)
-    /// @return  claimable value
-    function claimable(uint256 gaugeId)
-        public
-        view
-        gaugeExists(gaugeId)
-        returns (uint256)
-    {
-        State storage g = gauges[gaugeId];
-        return
-            (g.wallets[msg.sender].rewards +
-                g.wallets[msg.sender].balance *
-                rewardPerToken(gaugeId)) / REWARD_PER_TOKEN_PRECISION;
     }
 
     function claimReward(uint256 gaugeId)
