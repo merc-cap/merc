@@ -40,8 +40,15 @@ const config: HardhatUserConfig = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    hardhat: {
+      live: false,
+      saveDeployments: true,
+      chainId: 1337,
+    },
     localhost: {
-      saveDeployments: false,
+      live: false,
+      saveDeployments: true,
+      chainId: 1337,
     },
   },
   namedAccounts: {
