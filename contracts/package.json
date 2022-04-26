@@ -1,7 +1,8 @@
 {
-  "name": "hardhat-project",
+  "name": "merc-contracts",
+  "version": "0.0.1",
   "scripts": {
-    "export": "hardhat export --export-all ../web/src/contracts.json"
+    "export": "hardhat export --export-all ../web/src/deployments.json"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",
@@ -42,6 +43,7 @@
     "hardhat-contract-sizer": "^2.5.1",
     "hardhat-deploy": "^0.11.4",
     "hot-chain-svg": "w1nt3r-eth/hot-chain-svg",
-    "openzeppelin-solidity": "OpenZeppelin/openzeppelin-contracts"
+    "openzeppelin-solidity": "OpenZeppelin/openzeppelin-contracts",
+    "solidity-stringutils": "https://github.com/Arachnid/solidity-stringutils"
   }
 }

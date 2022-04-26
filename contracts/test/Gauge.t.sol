@@ -6,6 +6,7 @@ import "../src/Gauge.sol";
 import "./MockMerc.sol";
 import "./MockERC20.sol";
 import "./CheatCodes.sol";
+import "./MockRenderer.sol";
 
 import {ERC721TokenReceiver} from "@rari-capital/solmate/src/tokens/ERC721.sol";
 
@@ -77,11 +78,16 @@ contract GaugeTest is DSTest, ERC721TokenReceiver {
     }
 
     function testTokenUri() public {
-        // uint256 gaugeId = _mintedGauge();
-        // TODO
-        // console.log(gauge.svgMarkup(gaugeId));
-        // console.log(gauge.svgDataURI(gaugeId));
-        // console.log(gauge.tokenURI(gaugeId));
+        uint256 gaugeId = _mintedGauge();
+        IRenderer renderer = new MockRenderer();
+        gauge.setRenderer(renderer);
+        assertEq(gauge.tokenURI(gaugeId), "foo://bar");
+    }
+
+    function testRevertTokenUriNullRenderer() public {
+        uint256 gaugeId = _mintedGauge();
+        cheats.expectRevert(abi.encodeWithSignature("NullRenderer()"));
+        gauge.tokenURI(gaugeId);
     }
 
     function testPledge() public {
