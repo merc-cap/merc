@@ -15,6 +15,7 @@ import {
 import Home from "./Home";
 import NoMatch from "./NoMatch";
 import GaugeList from "./GaugeList";
+import Gauge from "./Gauge";
 import Nav from "./Nav";
 import Header from "./Header";
 import Web3App from "./Web3App";
@@ -28,6 +29,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="docs" element={<Docs />} />
             <Route path="gauges" element={<GaugeList />} />
+            <Route path="gauges/:id" element={<Gauge />} />
             <Route path="*" element={<NoMatch />} />
           </Route>
         </Routes>
