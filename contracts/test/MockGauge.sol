@@ -24,19 +24,19 @@ contract MockGauge is ERC721Enumerable, IGauge {
     }
 
     function totalWeight() external view returns (uint256) {
-        return 10000;
+        return 1000e18;
     }
 
     function weightOf(uint256) public pure returns (uint256) {
-        return 100e18;
+        return 8789e17;
     }
 
     function pledged(uint256) public pure returns (uint256) {
-        return 100;
+        return 1254e17;
     }
 
     function burnedWeightOf(uint256) public pure returns (uint256) {
-        return 30e18;
+        return weightOf(0) - pledged(0);
     }
 
     // function pledgingVaultOf(uint256 gaugeId)

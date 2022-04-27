@@ -46,8 +46,13 @@ contract RendererTest is DSTest {
         assertTrue(result.length > 10);
     }
 
-    // function testLogSvgUri() public {
-    //     string memory uri = renderer.dataURISVG(2);
-    //     console.log(uri);
-    // }
+    function testLogSvgUri() public {
+        string memory uri = renderer.dataURISVG(2);
+        console.log(uri);
+    }
+
+    function testLogSvg() public {
+        string memory uri = renderer.svgMarkup(2);
+        console.log(uri);
+    }
 }

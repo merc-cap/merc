@@ -39,14 +39,26 @@ contract Renderer is IRenderer {
             );
     }
 
-    function svgMarkup(uint256 gaugeId) private view returns (string memory) {
-        // uint256 pledged = gauge.pledged(gaugeId);
-        // uint256 totalStaked = gauge.totalStaked(gaugeId);
+    function svgMarkup(uint256 gaugeId) public view returns (string memory) {
+        uint256 weight = (1e4 * gauge.weightOf(gaugeId)) / gauge.totalWeight();
+
+        string memory gradientColor = string.concat(
+            "hsl(",
+            utils.uint2str(100 + (260 * weight) / 1e4),
+            ",100%,50%)"
+        );
+        string memory color = string.concat(
+            "hsla(",
+            // "0",
+            utils.uint2str(100 + (260 * weight) / 1e4),
+            ",100%,50%,10%)"
+        );
 
         string memory header = string.concat(
-            '<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">',
+            '<svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">',
             "<style>",
-            ".text { font-family: monospace; fill: white; font-size: 16px }",
+            ".text { font-family: monospace; fill: white; font-size: 22px }",
+            ".title { font-size: 22px }",
             ".bold { font-weight: bold }",
             ".card { fill: url(#gradient) black }",
             "</style>"
@@ -54,8 +66,10 @@ contract Renderer is IRenderer {
 
         string memory footer = string.concat(
             "<defs>",
-            '<radialGradient id="gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(383 28) rotate(135) scale(541.644)">',
-            '<stop stop-color="#990000"/>',
+            '<radialGradient id="gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(500 0) rotate(135) scale(600)">',
+            '<stop stop-color="',
+            gradientColor,
+            '"/>',
             '<stop offset="1"/>',
             "</radialGradient>",
             "</defs>"
@@ -66,106 +80,176 @@ contract Renderer is IRenderer {
             svg.rect(
                 string.concat(
                     svg.prop("class", "card"),
-                    svg.prop("width", "400"),
-                    svg.prop("height", "400"),
-                    svg.prop("rx", "24")
-                ),
-                utils.NULL
-            ),
-            svg.rect(
-                string.concat(
-                    svg.prop("x", "11.5"),
-                    svg.prop("y", "11.5"),
-                    svg.prop("width", "377"),
-                    svg.prop("height", "377"),
-                    svg.prop("rx", "17.5"),
-                    svg.prop("stroke", "white")
+                    svg.prop("x", "1"),
+                    svg.prop("y", "1"),
+                    svg.prop("width", "498"),
+                    svg.prop("height", "498"),
+                    svg.prop("rx", "24"),
+                    svg.prop("stroke", color)
                 ),
                 utils.NULL
             )
         );
-        string memory title = svg.text(
-            string.concat(
-                svg.prop("class", "bold text"),
-                svg.prop("x", "30"),
-                svg.prop("y", "50")
-            ),
-            string.concat(
-                svg.cdata("Mercenary Capital Gauge #"),
-                utils.uint2str(gaugeId)
-            )
-        );
-
-        string memory power = svg.text(
-            string.concat(
-                svg.prop("class", "text"),
-                svg.prop("x", "30"),
-                svg.prop("y", "80")
-            ),
-            string.concat(
-                "Weight: ",
-                utils.uint2str(
-                    (100 * gauge.weightOf(gaugeId)) /
-                        gauge.totalWeight() /
-                        (10**gauge.merc().decimals())
+        for (uint256 i = 25; i <= 475; i += 25) {
+            background = string.concat(
+                background,
+                svg.line(
+                    string.concat(
+                        svg.prop("x1", "0"),
+                        svg.prop("y1", utils.uint2str(i)),
+                        svg.prop("x2", "500"),
+                        svg.prop("y2", utils.uint2str(i)),
+                        svg.prop("stroke", color)
+                    ),
+                    utils.NULL
                 ),
-                "%"
-            )
-        );
-
-        string memory burnedWeight = svg.text(
-            string.concat(
-                svg.prop("class", "text"),
-                svg.prop("x", "30"),
-                svg.prop("y", "110")
-            ),
-            string.concat(
-                "Permanent: ",
-                utils.uint2str(
-                    gauge.burnedWeightOf(gaugeId) /
-                        (10**gauge.merc().decimals())
+                svg.line(
+                    string.concat(
+                        svg.prop("x1", utils.uint2str(i)),
+                        svg.prop("y1", "0"),
+                        svg.prop("x2", utils.uint2str(i)),
+                        svg.prop("y2", "500"),
+                        svg.prop("stroke", color)
+                    ),
+                    utils.NULL
                 )
-            )
-        );
-
-        string memory pledged = svg.text(
-            string.concat(
-                svg.prop("class", "text"),
-                svg.prop("x", "30"),
-                svg.prop("y", "155")
-            ),
-            string.concat("x", " pledged")
-        );
-
-        string memory totalStaked = svg.text(
-            string.concat(
-                svg.prop("class", "text"),
-                svg.prop("x", "30"),
-                svg.prop("y", "215")
-            ),
-            string.concat(utils.uint2str(gauge.totalStaked(gaugeId)), " staked")
-        );
-
-        string memory symbol = svg.text(
-            string.concat(
-                svg.prop("class", "bold text"),
-                svg.prop("x", "30"),
-                svg.prop("y", "270")
-            ),
-            gauge.stakingToken(gaugeId).symbol()
-        );
+            );
+        }
 
         return
             string.concat(
                 header,
                 background,
-                title,
-                power,
-                burnedWeight,
-                pledged,
-                totalStaked,
-                symbol,
+                titleSvg(gaugeId, 75),
+                weightSvg(gaugeId, 125),
+                mercSvg(gaugeId, 175),
+                burnRatioSvg(gaugeId, 225),
+                stakingTokenSvg(gaugeId, 275),
                 footer
+            );
+    }
+
+    function titleSvg(uint256 gaugeId, uint256 y)
+        private
+        view
+        returns (string memory)
+    {
+        IERC20Metadata t = gauge.stakingToken(gaugeId);
+        return
+            svg.text(
+                string.concat(
+                    svg.prop("class", "bold text title"),
+                    svg.prop("x", "50"),
+                    svg.prop("y", utils.uint2str(y - 1))
+                ),
+                string.concat(svg.cdata("MERC-GAUGE-"), t.symbol())
+            );
+    }
+
+    function weightSvg(uint256 gaugeId, uint256 y)
+        private
+        view
+        returns (string memory)
+    {
+        uint256 weight = (1e4 * gauge.weightOf(gaugeId)) / gauge.totalWeight();
+        return
+            textSvg(
+                string.concat(
+                    "Weight: ",
+                    utils.uint2str(weight / 100),
+                    ".",
+                    utils.uint2str(weight % 100),
+                    "%"
+                ),
+                y
+            );
+    }
+
+    function mercSvg(uint256 gaugeId, uint256 y)
+        private
+        view
+        returns (string memory)
+    {
+        uint256 merc = (gauge.weightOf(gaugeId)) /
+            (10**gauge.merc().decimals());
+        uint256 pledged = (gauge.pledged(gaugeId)) /
+            (10**gauge.merc().decimals());
+        uint256 burned = (gauge.burnedWeightOf(gaugeId)) /
+            (4 * 10**gauge.merc().decimals());
+        return
+            textSvg(
+                string.concat(
+                    utils.uint2str(merc),
+                    " MERC (4 * ",
+                    utils.uint2str(burned),
+                    " + ",
+                    utils.uint2str(pledged),
+                    ")"
+                ),
+                y
+            );
+    }
+
+    function stakingTokenSvg(uint256 gaugeId, uint256 y)
+        private
+        view
+        returns (string memory)
+    {
+        IERC20Metadata t = gauge.stakingToken(gaugeId);
+
+        string memory stakedTokenInfo;
+        if (address(t) != address(0)) {
+            uint256 staked = (100 * gauge.totalStaked(gaugeId)) /
+                (10**t.decimals());
+            stakedTokenInfo = string.concat(
+                utils.uint2str(staked / 100),
+                ".",
+                utils.uint2str(staked % 100),
+                " ",
+                t.symbol(),
+                " staked"
+            );
+        } else {
+            stakedTokenInfo = "Farming Gague (0x0)";
+        }
+
+        return textSvg(stakedTokenInfo, y);
+    }
+
+    function burnRatioSvg(uint256 gaugeId, uint256 y)
+        private
+        view
+        returns (string memory)
+    {
+        uint256 burned = gauge.burnedWeightOf(gaugeId);
+        uint256 pledged = gauge.pledged(gaugeId);
+        uint256 ratio = pledged == 0 ? 0 : (100 * burned) / pledged;
+        return
+            textSvg(
+                string.concat(
+                    "Burn Ratio: ",
+                    utils.uint2str(ratio / 100),
+                    ".",
+                    utils.uint2str(ratio % 100),
+                    ""
+                ),
+                y
+            );
+    }
+
+    function textSvg(string memory content, uint256 y)
+        private
+        pure
+        returns (string memory)
+    {
+        return
+            svg.text(
+                string.concat(
+                    svg.prop("class", "text"),
+                    svg.prop("x", "50"),
+                    svg.prop("y", utils.uint2str(y - 1))
+                ),
+                content
             );
     }
 }

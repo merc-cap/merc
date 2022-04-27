@@ -52,6 +52,7 @@ contract Gauge is Ownable, ERC721Enumerable, IGauge {
         PledgingVault pledgingVault;
         uint256 totalStaked;
         mapping(address => WalletState) wallets;
+        uint256 totalRewarded;
         uint256 weight;
         uint256 totalPledged;
         uint256 rewardPerWeightPaid;
@@ -405,6 +406,7 @@ contract Gauge is Ownable, ERC721Enumerable, IGauge {
         rewardPerGaugeWeightStored = rewardPerGaugeWeight();
         lastUpdateTime = block.timestamp;
         g.rewards = gaugeEarned(gaugeId);
+        g.totalRewarded += gaugeEarned(gaugeId);
         g.rewardPerWeightPaid = rewardPerGaugeWeightStored;
     }
 
