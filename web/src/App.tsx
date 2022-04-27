@@ -43,7 +43,7 @@ function Layout() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Container maxWidth="md">
-        <Stack spacing={3} sx={{ my: 6 }}>
+        <Stack spacing={2} sx={{ my: 4 }}>
           <Header />
           <Nav />
           <Outlet />
