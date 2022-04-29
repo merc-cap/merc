@@ -44,15 +44,9 @@ interface IGauge {
         view
         returns (IERC20Metadata);
 
-    // function stakingVaultOf(uint256 gaugeId)
-    //     external
-    //     view
-    //     returns (StakingVault);
-
     function stake(
         uint256 gaugeId,
-        uint256 amount,
-        address who
+        uint256 amount
     ) external;
 
     function totalStaked(uint256 gaugeId) external view returns (uint256);
@@ -64,8 +58,7 @@ interface IGauge {
 
     function unstake(
         uint256 gaugeId,
-        uint256 amount,
-        address who
+        uint256 amount
     ) external;
 
     function claimReward(uint256 gaugeId) external returns (uint256);

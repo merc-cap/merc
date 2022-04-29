@@ -86,8 +86,7 @@ contract MockGauge is ERC721Enumerable, IGauge {
 
     function stake(
         uint256 gaugeId,
-        uint256 amount,
-        address who
+        uint256 amount
     ) public {}
 
     function totalStaked(uint256) public pure returns (uint256) {
@@ -100,8 +99,7 @@ contract MockGauge is ERC721Enumerable, IGauge {
 
     function unstake(
         uint256 gaugeId,
-        uint256 amount,
-        address who
+        uint256 amount
     ) public {}
 
     function claimReward(uint256) public pure returns (uint256) {
