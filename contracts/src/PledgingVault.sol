@@ -76,4 +76,12 @@ contract PledgingVault is ERC4626, Initializable {
         pledgedMerc += assets;
         gauge.pledge(gaugeId, assets, receiver);
     }
+
+    function _afterTokenTransfer(address from, address to, uint256 shares) internal override {
+        if (from != address(0) && to != address(0)) {
+            uint256 assets = convertToAssets(shares);
+            gauge.depledge(gaugeId, assets, from);
+            gauge.pledge(gaugeId, assets, to);
+        }
+    }
 }

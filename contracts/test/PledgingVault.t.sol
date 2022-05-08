@@ -43,4 +43,16 @@ contract PledgingVaultTest is DSTest, ERC721TokenReceiver {
         assertEq(merc.balanceOf(address(this)), holdings);
         assertEq(merc.balanceOf(address(gauge)), 0);
     }
+
+    function testDepositThenTransfer() public {
+        merc.approve(address(pMERC), 100e18);
+        pMERC.deposit(100e18, address(this));
+
+        address bob = address(0xb0b);
+        pMERC.transfer(bob, 40e18);
+
+        assertEq(merc.balanceOf(address(gauge)), 100e18);
+        assertEq(gauge.pledged(gaugeId, address(this)), 60e18);
+        assertEq(gauge.pledged(gaugeId, bob), 40e18);
+    }
 }
