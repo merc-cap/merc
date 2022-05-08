@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "./PledgingVault.sol";
-import "./StakingVault.sol";
 
 import "./interfaces/IMerc.sol";
 import "./interfaces/IRenderer.sol";
@@ -48,7 +47,6 @@ contract Gauge is Ownable, ERC721Enumerable, IGauge {
 
     struct State {
         IERC20Metadata stakingToken;
-        StakingVault stakingVault;
         PledgingVault pledgingVault;
         uint256 totalStaked;
         mapping(address => WalletState) wallets;
@@ -76,7 +74,6 @@ contract Gauge is Ownable, ERC721Enumerable, IGauge {
 
     IMerc public immutable override merc;
     PledgingVault private immutable defaultPledgingVault;
-    StakingVault private immutable defaultStakingVault;
 
     uint256 public tokenCount;
     uint256 public mintPrice;
@@ -98,14 +95,6 @@ contract Gauge is Ownable, ERC721Enumerable, IGauge {
             ""
         );
 
-        defaultStakingVault = new StakingVault();
-        defaultStakingVault.initialize(
-            Gauge(address(0)),
-            type(uint256).max,
-            IERC20Metadata(address(0)),
-            "",
-            ""
-        );
         createTime = block.timestamp;
     }
 
@@ -154,17 +143,6 @@ contract Gauge is Ownable, ERC721Enumerable, IGauge {
             merc,
             string.concat("Pledged Merc Gauge ", idStr),
             string.concat("pMERC-", idStr)
-        );
-
-        gauges[id].stakingVault = StakingVault(
-            Clones.clone(address(defaultStakingVault))
-        );
-        gauges[id].stakingVault.initialize(
-            this,
-            id,
-            _stakingToken,
-            string.concat("Merc Gauge ", idStr, " ", _stakingToken.name()),
-            string.concat("MG-", idStr, "-", _stakingToken.symbol())
         );
 
         return id;
@@ -302,30 +280,16 @@ contract Gauge is Ownable, ERC721Enumerable, IGauge {
         return gauges[gaugeId].stakingToken;
     }
 
-    function stakingVaultOf(uint256 gaugeId)
-        public
-        view
-        returns (StakingVault)
-    {
-        State storage g = gauges[gaugeId];
-        return g.stakingVault;
-    }
-
     function stake(
         uint256 gaugeId,
-        uint256 amount,
-        address who
-    ) public gaugeExists(gaugeId) updateStakingReward(gaugeId, who) {
+        uint256 amount
+    ) public gaugeExists(gaugeId) updateStakingReward(gaugeId, msg.sender) {
         State storage g = gauges[gaugeId];
 
-        if (msg.sender != address(g.stakingVault)) {
-            revert InvalidSender();
-        }
-
         g.totalStaked += amount;
-        g.wallets[who].balance += amount;
+        g.wallets[msg.sender].balance += amount;
         g.stakingToken.safeTransferFrom(msg.sender, address(this), amount);
-        emit Stake(gaugeId, who, amount);
+        emit Stake(gaugeId, msg.sender, amount);
     }
 
     function totalStaked(uint256 gaugeId) public view returns (uint256) {
@@ -342,23 +306,18 @@ contract Gauge is Ownable, ERC721Enumerable, IGauge {
 
     function unstake(
         uint256 gaugeId,
-        uint256 amount,
-        address who
-    ) public gaugeExists(gaugeId) updateStakingReward(gaugeId, who) {
+        uint256 amount
+    ) public gaugeExists(gaugeId) updateStakingReward(gaugeId, msg.sender) {
         State storage g = gauges[gaugeId];
 
-        if (msg.sender != address(g.stakingVault)) {
-            revert InvalidSender();
-        }
-
-        if (amount > g.wallets[who].balance) {
+        if (amount > g.wallets[msg.sender].balance) {
             revert AmountTooHigh();
         }
 
         g.totalStaked -= amount;
-        g.wallets[who].balance -= amount;
+        g.wallets[msg.sender].balance -= amount;
         g.stakingToken.safeTransfer(msg.sender, amount);
-        emit Unstake(gaugeId, who, amount);
+        emit Unstake(gaugeId, msg.sender, amount);
     }
 
     function claimReward(uint256 gaugeId)
